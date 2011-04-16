@@ -58,7 +58,7 @@ public final class RandomGamer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "RandomGamer";
+		return "Random Dumplings";
 	}
 
 	@Override
