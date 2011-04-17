@@ -16,32 +16,39 @@ import com.dumplings.general.PlayerStrategy;
 
 public class MiniMax extends PlayerStrategy {
 	
+	Map<String, Integer> minStateScores, maxStateScores;
+	
 	public MiniMax(StateMachine sm) {
 		super(sm);
+		minStateScores = new HashMap<String, Integer>();
+		maxStateScores = new HashMap<String, Integer>();
 	}
 	
 	public Move getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+		minStateScores.clear();
+		maxStateScores.clear();
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
-		Move bestMove = null;
-		int bestValue = Integer.MIN_VALUE;
-		for (Move move : moves) {
-			int value = minScore(role, move, state);
-			if (value > bestValue) {
-				bestValue = value;
-				bestMove = move;
+		if (moves.size() == 1) {
+			return moves.get(0);
+		} else {
+			Move bestMove = null;
+			int bestValue = Integer.MIN_VALUE;
+			for (Move move : moves) {
+				int value = minScore(role, move, state);
+				if (value > bestValue) {
+					bestValue = value;
+					bestMove = move;
+				}
 			}
+			return bestMove;
 		}
-		return bestMove;
 	}
 	
-	/*
-	 * minScore(role, move, state) looks at all possible next states resulting from role making move in state
-	 * and returns the minimum possible score
-	 */
 	private int minScore(Role role, Move move, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-		List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
-	
+		if (minStateScores.get(state.toString()) != null)
+			return minStateScores.get(state.toString());
 		int worstScore = Integer.MAX_VALUE;
+		List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 		for (List<Move> jointMove : allJointMoves) {
 			MachineState newState = stateMachine.getNextState(state, jointMove);
 			
@@ -51,17 +58,15 @@ public class MiniMax extends PlayerStrategy {
 				worstScore = newScore;
 			}
 		}
+		minStateScores.put(state.toString(), worstScore);
 		return worstScore;
 	}
 	
-	/*
-	 * maxScore(role, newState) looks at all possible next states and
-	 * 
-	 */
 	private int maxScore(Role role, MachineState state) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-		if (stateMachine.isTerminal(state)) {
+		if (stateMachine.isTerminal(state))
 			return stateMachine.getGoal(state, role);
-		}		
+		if (maxStateScores.get(state.toString()) != null)
+			return maxStateScores.get(state.toString());
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
 			int value = minScore(role, move, state);
@@ -69,6 +74,7 @@ public class MiniMax extends PlayerStrategy {
 				bestValue = value;
 			}
 		}
+		maxStateScores.put(state.toString(), bestValue);
 		return bestValue;
 	}
 }
