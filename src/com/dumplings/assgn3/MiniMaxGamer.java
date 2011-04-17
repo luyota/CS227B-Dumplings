@@ -39,12 +39,21 @@ public final class MiniMaxGamer extends StateMachineGamer
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = strategy.getBestMove(getCurrentState(), getRole());		
+		try {
+		Move selection = strategy.getBestMove(getCurrentState(), getRole());
+		System.out.println("Selection "+ selection.toString());
 
 		long stop = System.currentTimeMillis();
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
+		
 		return selection;
+		}
+		catch (Exception e) {
+			System.out.println("ohohohh");
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	@Override

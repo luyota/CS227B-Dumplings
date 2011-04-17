@@ -40,10 +40,11 @@ public class MiniMax extends PlayerStrategy {
 	 */
 	private int minScore(Role role, Move move, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
+	
 		int worstScore = Integer.MAX_VALUE;
 		for (List<Move> jointMove : allJointMoves) {
 			MachineState newState = stateMachine.getNextState(state, jointMove);
-
+			
 			/* Call maxScore on new state and minimize it */
 			int newScore = maxScore(role, newState);
 			if (newScore < worstScore) {
@@ -58,9 +59,9 @@ public class MiniMax extends PlayerStrategy {
 	 * 
 	 */
 	private int maxScore(Role role, MachineState state) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-		if (stateMachine.isTerminal(state))
+		if (stateMachine.isTerminal(state)) {
 			return stateMachine.getGoal(state, role);
-			
+		}		
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
 			int value = minScore(role, move, state);
