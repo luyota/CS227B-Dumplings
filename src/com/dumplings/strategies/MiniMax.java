@@ -61,8 +61,8 @@ public class MiniMax extends PlayerStrategy {
 	private int maxScore(Role role, MachineState state) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 		if (stateMachine.isTerminal(state)) 			
 			return stateMachine.getGoal(state, role);		
-		if (maxStateScores.get(state.toString()) != null) 			
-			return maxStateScores.get(state.toString());
+		//if (maxStateScores.get(state.toString()) != null) 			
+			//return maxStateScores.get(state.toString());
 					
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
