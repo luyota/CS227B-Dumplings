@@ -3,7 +3,10 @@ package com.dumplings.strategies;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
+import util.gdl.grammar.GdlSentence;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -16,16 +19,16 @@ import com.dumplings.general.PlayerStrategy;
 
 public class AlphaBeta extends PlayerStrategy {
 	
-	Map<String, Integer> maxStateScores;	
+	Map<String, Integer> stateScores;	
 	
 	public AlphaBeta(StateMachine sm) {
 		super(sm);		
-		maxStateScores = new HashMap<String, Integer>();
+		stateScores = new HashMap<String, Integer>();
 	}
 	
 	public Move getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		
-		maxStateScores.clear();		
+		stateScores.clear();
 		
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		if (moves.size() == 1) {
@@ -64,9 +67,12 @@ public class AlphaBeta extends PlayerStrategy {
 	
 	private int maxScore(Role role, MachineState state, int alpha, int beta) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 		if (stateMachine.isTerminal(state)) 			
-			return stateMachine.getGoal(state, role);		
-		//if (maxStateScores.get(state.toString()) != null) 			
-		//	return maxStateScores.get(state.toString());
+			return stateMachine.getGoal(state, role);	
+		
+		String stateString = makeStateString(state, alpha, beta);
+		if (stateScores.get(stateString) != null) {			
+			return stateScores.get(stateString);
+		}
 					
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
@@ -80,7 +86,16 @@ public class AlphaBeta extends PlayerStrategy {
 			}
 			alpha = Math.max(alpha, bestValue);
 		}
-		//maxStateScores.put(state.toString(), bestValue);
+		stateScores.put(stateString, bestValue);
 		return bestValue;
+	}
+	private String canonicalizeStateString(MachineState state) {
+		Set<String> sortedStateContents = new TreeSet<String>();
+		for (GdlSentence gdl : state.getContents())
+			sortedStateContents.add(gdl.toString());
+		return sortedStateContents.toString();
+	}
+	private String makeStateString(MachineState state, int alpha, int beta) {
+		return canonicalizeStateString(state) + " alpha: " + alpha + " beta: " + beta;
 	}
 }
