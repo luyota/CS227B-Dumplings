@@ -19,19 +19,20 @@ import com.dumplings.general.PlayerStrategy;
 
 public class MiniMax extends PlayerStrategy {
 	
-	Map<String, Integer> stateScores;
+	Map<String, Integer> maxStateScores;
+	Map<String, Map<String, Integer>> minStateScores;
 	
 	public MiniMax(StateMachine sm) {
 		super(sm);
-		stateScores = new HashMap<String, Integer>();
+		maxStateScores = new HashMap<String, Integer>();
+		minStateScores = new HashMap<String, Map<String, Integer>>();
 	}
 	
 	public Move getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-		stateScores.clear();
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
-		if (moves.size() == 1) {
+		if (moves.size() == 1)
 			return moves.get(0);
-		} else {
+		else {
 			Move bestMove = null;
 			int bestValue = Integer.MIN_VALUE;
 			for (Move move : moves) {
@@ -45,16 +46,23 @@ public class MiniMax extends PlayerStrategy {
 			return bestMove;
 		}
 	}
+	
 	private int minScore(Role role, Move move, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		int worstScore = Integer.MAX_VALUE;
+		String stateString = canonicalizeStateString(state);
+		String moveString = move.toString();
+		Map<String, Integer> stateMoveScores = minStateScores.get(stateString);
+		if (stateMoveScores != null && stateMoveScores.get(moveString) != null)
+			return stateMoveScores.get(moveString);
 		List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 		for (List<Move> jointMove : allJointMoves) {
 			MachineState newState = stateMachine.getNextState(state, jointMove);
 			int newScore = maxScore(role, newState);
-			if (newScore < worstScore) {
+			if (newScore < worstScore)
 				worstScore = newScore;
-			}
 		}
+		if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
+		stateMoveScores.put(moveString, worstScore);
 		return worstScore;
 	}
 	
@@ -62,17 +70,16 @@ public class MiniMax extends PlayerStrategy {
 		if (stateMachine.isTerminal(state)) 			
 			return stateMachine.getGoal(state, role);		
 		String stateString = canonicalizeStateString(state);
-		if (stateScores.get(stateString) != null) 			
-			return stateScores.get(stateString);
+		if (maxStateScores.get(stateString) != null) 			
+			return maxStateScores.get(stateString);
 					
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
 			int value = minScore(role, move, state);
-			if (value > bestValue) {
+			if (value > bestValue)
 				bestValue = value;
-			}
 		}
-		stateScores.put(stateString, bestValue);
+		maxStateScores.put(stateString, bestValue);
 		return bestValue;
 	}
 	

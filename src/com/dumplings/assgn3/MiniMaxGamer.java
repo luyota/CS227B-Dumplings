@@ -28,6 +28,7 @@ public final class MiniMaxGamer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new MiniMax(getStateMachine());
+		strategy.getBestMove(getCurrentState(), getRole()); // pre-cache during the warmup period
 	}
 	
 	/**
