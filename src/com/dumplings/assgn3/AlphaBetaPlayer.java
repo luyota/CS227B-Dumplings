@@ -27,6 +27,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new AlphaBeta(getStateMachine());
+		//strategy.enableCache(false);
 	}
 	
 	/**

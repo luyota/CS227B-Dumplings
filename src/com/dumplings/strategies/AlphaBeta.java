@@ -25,6 +25,7 @@ public class AlphaBeta extends PlayerStrategy {
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	private boolean useCaching = true;
+	private int numStatesExpanded;
 	
 	private Timer t = null;
 	private ActionListener TimeoutHandler = new ActionListener() {
@@ -37,8 +38,7 @@ public class AlphaBeta extends PlayerStrategy {
 		super(sm);
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
-		t = new Timer(0, TimeoutHandler);
-		t.setRepeats(false);
+		
 	}
 	
 	public void enableCache(boolean flag) {
@@ -46,19 +46,21 @@ public class AlphaBeta extends PlayerStrategy {
 	}
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException { 
-		
-		t.setDelay((int) timeout);
-		if (t.isRunning())
-			t.restart();
-		else
-			t.start();
+		t = new Timer((int) (timeout - System.currentTimeMillis()), TimeoutHandler);
+		t.setRepeats(false);
+		//t.setDelay((int) (timeout - System.currentTimeMillis()));
+		t.start();
 		
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
-		if (moves.size() == 1)
+		if (moves.size() == 1) {
+			System.out.println("Expanded 1 state");
 			return moves.get(0);
+		}
 		else {
 			Move bestMove = null;
 			int bestValue = Integer.MIN_VALUE;
+			numStatesExpanded = 1;
+			
 			for (Move move : moves) {
 				int value = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE);
 				if (value > bestValue) {
@@ -67,13 +69,14 @@ public class AlphaBeta extends PlayerStrategy {
 				}
 			}
 			System.out.println("Best: " + bestValue);
+			System.out.println("Expanded " + numStatesExpanded + " states");
 			return bestMove;
 		}
 	}
 	
 	private int minScore(Role role, Move move, MachineState state, int alpha, int beta) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		int worstScore = Integer.MAX_VALUE;
-		String stateString = canonicalizeStateString(state);
+		String stateString = canonicalizeStateString(state, alpha, beta);
 		String moveString = move.toString();
 		Map<String, Integer> stateMoveScores = minStateScores.get(stateString);
 		if (useCaching && stateMoveScores != null && stateMoveScores.get(moveString) != null)
@@ -96,13 +99,15 @@ public class AlphaBeta extends PlayerStrategy {
 	}
 	
 	private int maxScore(Role role, MachineState state, int alpha, int beta) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-		if (stateMachine.isTerminal(state)) 			
-
+		if (stateMachine.isTerminal(state)) { 			
+			numStatesExpanded++;
 			return stateMachine.getGoal(state, role);		
-		String stateString = canonicalizeStateString(state);
+		}
+		String stateString = canonicalizeStateString(state, alpha, beta);
 		if (useCaching && maxStateScores.get(stateString) != null) 			
 			return maxStateScores.get(stateString);
-					
+		
+		numStatesExpanded++;
 		int bestValue = Integer.MIN_VALUE;
 		for (Move move : stateMachine.getLegalMoves(state, role)) {
 			int value = minScore(role, move, state, alpha, beta);
@@ -118,10 +123,11 @@ public class AlphaBeta extends PlayerStrategy {
 		return bestValue;
 	}
 	
-	private String canonicalizeStateString(MachineState state) {
+	private String canonicalizeStateString(MachineState state, int alpha, int beta) {
 		Set<String> sortedStateContents = new TreeSet<String>();
-		for (GdlSentence gdl : state.getContents())
+		for (GdlSentence gdl : state.getContents()) {
 			sortedStateContents.add(gdl.toString());
-		return sortedStateContents.toString();
+		}
+		return alpha + " " + beta + " " + sortedStateContents.toString();
 	}
 }

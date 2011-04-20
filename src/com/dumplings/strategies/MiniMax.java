@@ -52,7 +52,7 @@ public class MiniMax extends PlayerStrategy {
 					bestMove = move;
 				}
 			}
-			System.out.println("Expanded " + numStatesExpanded + " states");
+			System.out.println("(" + bestValue + ") " + "Expanded " + numStatesExpanded + " states");
 			return bestMove;
 		}
 	}
