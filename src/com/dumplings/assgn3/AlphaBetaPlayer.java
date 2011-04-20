@@ -17,7 +17,7 @@ import com.dumplings.general.PlayerStrategy;
 import com.dumplings.strategies.AlphaBeta;
 
 /**
- * RandomGamer plays a random legal move
+ * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
 public final class AlphaBetaPlayer extends StateMachineGamer
 {
@@ -30,7 +30,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	}
 	
 	/**
-	 * Selects a random legal move
+	 * Selects the best legal move
 	 */
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -38,7 +38,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = strategy.getBestMove(getCurrentState(), getRole());
+		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 		
 		System.out.println("Selection: "+ selection.toString());
 

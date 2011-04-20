@@ -15,5 +15,7 @@ public abstract class PlayerStrategy {
 		this.stateMachine = sm;
 	}
 	
-	public abstract Move getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException;
+	public abstract void enableCache(boolean flag);
+	
+	public abstract Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException;
 }

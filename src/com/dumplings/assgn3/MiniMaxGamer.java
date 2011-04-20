@@ -28,6 +28,8 @@ public final class MiniMaxGamer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new MiniMax(getStateMachine());
+		strategy.enableCache(false);
+		//strategy.getBestMove(getCurrentState(), getRole(), timeout); // pre-cache during the warmup period
 	}
 	
 	/**
@@ -39,7 +41,7 @@ public final class MiniMaxGamer extends StateMachineGamer
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = strategy.getBestMove(getCurrentState(), getRole());
+		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 		
 		System.out.println("Selection: "+ selection.toString());
 
