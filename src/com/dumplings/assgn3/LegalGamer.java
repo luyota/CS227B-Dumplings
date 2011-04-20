@@ -8,7 +8,6 @@ import java.util.Set;
 import player.gamer.Gamer;
 import player.gamer.exception.MetaGamingException;
 import player.gamer.exception.MoveSelectionException;
-import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
 import util.gdl.grammar.Gdl;
 import util.gdl.grammar.GdlConstant;
 import util.gdl.grammar.GdlPool;
@@ -17,7 +16,6 @@ import util.gdl.grammar.GdlRelation;
 import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.prover.aima.AimaProver;
-import apps.player.detail.DetailPanel;
 
 public final class LegalGamer extends Gamer {
 	
@@ -28,11 +26,6 @@ public final class LegalGamer extends Gamer {
 	@Override
 	public String getName() {
 		return "Legal Dumplings";
-	}
-
-	@Override
-	public DetailPanel getDetailPanel() {
-		return new ReflexDetailPanel();
 	}
 
 	@Override
