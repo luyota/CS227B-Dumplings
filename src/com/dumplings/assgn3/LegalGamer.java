@@ -39,7 +39,7 @@ public final class LegalGamer extends Gamer {
 	public void metaGame(long timeout) throws MetaGamingException {
 		prover = new AimaProver(new HashSet<Gdl>(getMatch().getGame().getRules()));
 		GdlRelation initQuery = GdlPool.getRelation(GdlPool.getConstant("init"), new GdlTerm[] { GdlPool.getVariable("?x") });
-		currentState = prover.askAll(initQuery, new HashSet<GdlSentence>());
+		currentState = getState(prover.askAll(initQuery, new HashSet<GdlSentence>()));
 		getMatch().appendState(currentState);
 		roles = new ArrayList<GdlProposition>();
         for (Gdl gdl : getMatch().getGame().getRules()) {
@@ -52,9 +52,17 @@ public final class LegalGamer extends Gamer {
         }
 	}
 	
+	private Set<GdlSentence> getState(Set<GdlSentence> results) {
+		Set<GdlSentence> trues = new HashSet<GdlSentence>();
+		for (GdlSentence result : results) {
+			trues.add(GdlPool.getRelation(GdlPool.getConstant("true"), new GdlTerm[] { result.get(0) }));
+		}
+		return trues;
+	}
+	
 	private Set<GdlSentence> getNextState(List<GdlSentence> moves) {
 		GdlRelation nextQuery = GdlPool.getRelation(GdlPool.getConstant("next"), new GdlTerm[] { GdlPool.getVariable("?x") });
-		return prover.askAll(nextQuery, getContext(moves));
+		return getState(prover.askAll(nextQuery, getContext(moves)));
 	}
 	
 	private Set<GdlSentence> getContext(List<GdlSentence> moves) {
@@ -69,11 +77,12 @@ public final class LegalGamer extends Gamer {
 	@Override
 	public GdlSentence selectMove(long timeout) throws MoveSelectionException {
 		List<GdlSentence> lastMoves = getMatch().getMostRecentMoves();
-		currentState = getNextState(lastMoves);
-		getMatch().appendState(currentState);
+		if (lastMoves != null) {
+			currentState = getNextState(lastMoves);
+			getMatch().appendState(currentState);
+		}
 		GdlRelation legalQuery = GdlPool.getRelation(GdlPool.getConstant("legal"), new GdlTerm[] { getRoleName().toTerm(), GdlPool.getVariable("?x")});
 		Set<GdlSentence> legalMoves = prover.askAll(legalQuery, currentState);
-		System.out.println(legalMoves.size());
 		return legalMoves.iterator().next().get(1).toSentence();
 	}
 
