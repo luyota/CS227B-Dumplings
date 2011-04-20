@@ -18,7 +18,7 @@ import com.dumplings.general.PlayerStrategy;
 import com.dumplings.strategies.MiniMax;
 
 /**
- * RandomGamer plays a random legal move
+ * MiniMaxGamer plays the game using minimax search algorithm.
  */
 public final class MiniMaxGamer extends StateMachineGamer
 {
@@ -32,7 +32,7 @@ public final class MiniMaxGamer extends StateMachineGamer
 	}
 	
 	/**
-	 * Selects a random legal move
+	 * Selects a best move
 	 */
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException

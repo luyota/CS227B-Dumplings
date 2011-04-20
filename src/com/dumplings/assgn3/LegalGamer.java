@@ -17,6 +17,9 @@ import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.prover.aima.AimaProver;
 
+/*
+ * Legal Gamer plays the same move all the time.
+ */
 public final class LegalGamer extends Gamer {
 	
 	private AimaProver prover;
