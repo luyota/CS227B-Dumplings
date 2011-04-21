@@ -1,14 +1,10 @@
 package com.dumplings.strategies;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.swing.Timer;
 
 import util.gdl.grammar.GdlSentence;
 import util.statemachine.MachineState;
@@ -28,6 +24,8 @@ public class AlphaBeta extends PlayerStrategy {
 	private boolean useCaching = true;
 	private int numStatesExpanded;
 	
+	static protected boolean stopExecution = false;
+	
 	public AlphaBeta(StateMachine sm) {
 		super(sm);
 		maxStateScores = new HashMap<String, Integer>();
@@ -39,24 +37,34 @@ public class AlphaBeta extends PlayerStrategy {
 	}
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
+		try {
+			System.out.println("Hold on just a moment..."); // why does this prevent lockups???
+			Thread.sleep(500);
+		} catch (InterruptedException e) {}
+		
 		// Call the thread that does the computation
 		abc = new AlphaBetaComputer(state, role, Thread.currentThread());
+		stopExecution = false;
 		abc.start();
 		
 		// And go to sleep, but not longer than the timeout
 		try {
-			Thread.sleep(timeout - System.currentTimeMillis());
-			abc.stopExecution = true;
+			Thread.sleep((timeout - System.currentTimeMillis()) - 500);
+			System.out.println("Timed out!");
+			stopExecution = true;
 		} catch (InterruptedException e) {
-			// Ignore
+			System.out.println("Computer reached conclusion.");
 		}
 		
 		// Make sure bestMove is not null
+		System.out.println("Checking best move...");
 		Move bestMove = abc.getBestMove();
-		if (bestMove == null)
+		if (bestMove == null) {
+			System.out.println("Falling back to legal strategy.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
+		}
 		
-		System.out.println("bestMove is "+bestMove.toString());
+		System.out.println("bestMove is " + bestMove.toString());
 		return bestMove;
 	}
 	
@@ -64,7 +72,6 @@ public class AlphaBeta extends PlayerStrategy {
 		private MachineState state;
 		private Role role;
 		private Thread parent;
-		protected boolean stopExecution = false;
 		private Move bestMove;
 		
 		public AlphaBetaComputer(MachineState state, Role role, Thread parent) {
@@ -78,20 +85,18 @@ public class AlphaBeta extends PlayerStrategy {
 		}
 		
 		public void run() {
-			System.out.println("Starting "+Thread.currentThread().getId());
+			System.out.println("Starting " + Thread.currentThread().getId());
 			try {
 				getBestMove(state, role);
 			} catch (MoveDefinitionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (GoalDefinitionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (TransitionDefinitionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			parent.interrupt();
+			System.out.println("Finished " + Thread.currentThread().getId());
 		}
 		
 		public void getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException { 		
@@ -99,20 +104,20 @@ public class AlphaBeta extends PlayerStrategy {
 			if (moves.size() == 1) {
 				System.out.println("Expanded 1 state");
 				bestMove = moves.get(0);
-			}
-			else {
+			} else {
 				bestMove = null;
 				int bestValue = Integer.MIN_VALUE;
 				numStatesExpanded = 1;
 				
 				for (Move move : moves) {
 					int value = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE);
-					if (stopExecution)
-						return;
-					
 					if (value > bestValue) {
 						bestValue = value;
 						bestMove = move;
+					}
+					if (stopExecution) {
+						System.out.println("Stopping alpha-beta thread!");
+						break;
 					}
 				}
 				System.out.println("Best: " + bestValue);
@@ -136,6 +141,10 @@ public class AlphaBeta extends PlayerStrategy {
 				beta = Math.min(beta, worstScore);
 				if (beta <= alpha) {
 					worstScore = beta;
+					break;
+				}
+				if (stopExecution) {
+					System.out.println("Stopping minScore!");
 					break;
 				}
 			}
@@ -162,6 +171,10 @@ public class AlphaBeta extends PlayerStrategy {
 				alpha = Math.max(alpha, bestValue);
 				if (alpha >= beta) {
 					bestValue = alpha;
+					break;
+				}
+				if (stopExecution) {
+					System.out.println("Stopping maxScore!");
 					break;
 				}
 			}
