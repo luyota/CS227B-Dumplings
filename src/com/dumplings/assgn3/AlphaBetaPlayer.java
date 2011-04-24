@@ -36,6 +36,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		System.out.println("in selectmove");
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());

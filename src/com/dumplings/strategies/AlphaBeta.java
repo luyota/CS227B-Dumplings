@@ -45,7 +45,7 @@ public class AlphaBeta extends PlayerStrategy {
 		
 		// And go to sleep, but not longer than the timeout
 		try {
-			Thread.sleep(timeout - System.currentTimeMillis());
+			Thread.sleep(Math.max(timeout - System.currentTimeMillis() - 2000, 0));
 			abc.stopExecution = true;
 		} catch (InterruptedException e) {
 			// Ignore
@@ -78,7 +78,6 @@ public class AlphaBeta extends PlayerStrategy {
 		}
 		
 		public void run() {
-			System.out.println("Starting "+Thread.currentThread().getId());
 			try {
 				getBestMove(state, role);
 			} catch (MoveDefinitionException e) {
