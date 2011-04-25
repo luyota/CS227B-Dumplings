@@ -18,7 +18,6 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import com.dumplings.general.PlayerStrategy;
 
 public class MiniMax extends PlayerStrategy {
-	
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	private boolean useCaching = true;

@@ -26,8 +26,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		strategy = new AlphaBeta(getStateMachine());
-		//strategy.enableCache(false);
+		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 	}
 	
 	/**
@@ -36,17 +35,16 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		System.out.println("in selectmove");
+		System.out.println("Selecting move...");
+
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
 		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
-		
-		System.out.println("Selection: "+ selection.toString());
 
 		long stop = System.currentTimeMillis();
 		
-		System.out.println("Total time: " + (stop - start));
+		System.out.println("Total time (ms): " + (stop - start));
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
 		
