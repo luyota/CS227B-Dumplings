@@ -45,9 +45,12 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 		System.out.println("Selection: "+ selection.toString());
 
 		long stop = System.currentTimeMillis();
+		
+		System.out.println("Total time: " + (stop - start));
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
 		
+		System.out.println("Finishing move!");
 		return selection;
 	}
 	
