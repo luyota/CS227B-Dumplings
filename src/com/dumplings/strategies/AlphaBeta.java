@@ -26,7 +26,7 @@ public class AlphaBeta extends PlayerStrategy {
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	
-	PlayerHeuristic heuristic;
+	PlayerHeuristic heuristic = null;
 	
 	private AlphaBetaComputer abc;
 	private boolean useCaching = true;
@@ -52,6 +52,7 @@ public class AlphaBeta extends PlayerStrategy {
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		// Call the thread that does the computation
 		abc = new AlphaBetaComputer(state, role);
+		
 		abc.start();
 		
 		// And go to sleep, but not longer than the timeout
@@ -168,7 +169,10 @@ public class AlphaBeta extends PlayerStrategy {
 			
 			/* If we reached our cut-off depth, apply heuristic */
 			if (depth > maxDepth) {
-				return heuristic.getScore(state, role);
+				if (heuristic != null)
+					return heuristic.getScore(state, role);
+				/* Should always not reach here*/
+				return 0;
 			}
 			
 			/* Check if we have this state in cache already */

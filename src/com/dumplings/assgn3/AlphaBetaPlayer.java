@@ -14,6 +14,7 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
+import com.dumplings.heuristics.OpponentMobility;
 import com.dumplings.strategies.AlphaBeta;
 
 /**
@@ -26,6 +27,8 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		//strategy = new AlphaBeta(getStateMachine(), 2);
+		//((AlphaBeta) strategy).addHeuristic(new OpponentMobility(getStateMachine()));
 		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 	}
 	
