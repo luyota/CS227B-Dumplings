@@ -17,19 +17,29 @@ public class MonteCarlo implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private Random generator = new Random();
 	private Boolean stopExecution = false;
+	private int numSamples = 1;
 	
 	public MonteCarlo(StateMachine sm) {
 		stateMachine = sm;
 	}
+	
+	public void setSampleSize(int size) {
+		numSamples = size;
+	}
+	
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		if (stateMachine.isTerminal(state))
-			return stateMachine.getGoal(state, role);		
-		if (stopExecution) return null;
-		List<List<Move>> allMoves= stateMachine.getLegalJointMoves(state);
-		List<Move> randomMoves = allMoves.get(generator.nextInt(allMoves.size()));
-		MachineState newState = stateMachine.getNextState(state, randomMoves);
-		return getScore(newState, role);
+		MachineState nextState = state;
+		while (!stateMachine.isTerminal(nextState)) {
+			if (stopExecution)
+				return null;
+			
+			List<List<Move>> allMoves= stateMachine.getLegalJointMoves(nextState);
+			List<Move> randomMoves = allMoves.get(generator.nextInt(allMoves.size()));
+			nextState = stateMachine.getNextState(nextState, randomMoves);
+		}
+	
+		return stateMachine.getGoal(nextState, role);
 	}
 
 	@Override
