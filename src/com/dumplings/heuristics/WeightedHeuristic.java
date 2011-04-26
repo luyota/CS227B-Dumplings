@@ -35,8 +35,11 @@ public class WeightedHeuristic implements PlayerHeuristic {
 	public int getScore(MachineState state, Role role) {
 		int score = 0;
 		
+		int index = 0;
 		for (PlayerHeuristic heuristic : heuristics) {
-			score += heuristic.getScore(state, role);
+			score += weights.get(index) * heuristic.getScore(state, role);
+		
+			index++;
 		}
 		return score;
 	}
