@@ -1,6 +1,5 @@
 package com.dumplings.strategies;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +17,6 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
-import com.dumplings.general.PlayerHeuristic;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
@@ -26,23 +24,21 @@ public class AlphaBeta extends PlayerStrategy {
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	
-	PlayerHeuristic heuristic = null;
-	
 	private AlphaBetaComputer abc;
 	private boolean useCaching = true;
 	private int numStatesExpanded;
 	private int maxDepth;
 	private Timer timer;
 	
+	public AlphaBeta(StateMachine sm) {
+		this(sm, Integer.MAX_VALUE);
+	}
+	
 	public AlphaBeta(StateMachine sm, int maxDepth) {
 		super(sm);
 		this.maxDepth = maxDepth;
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
-	}
-	
-	public void addHeuristic(PlayerHeuristic heuristic) {
-		this.heuristic = heuristic;
 	}
 	
 	public void enableCache(boolean flag) {
@@ -152,11 +148,10 @@ public class AlphaBeta extends PlayerStrategy {
 					break;
 				}
 			}
-			/* Save result to cache */
-			if (stateMoveScores == null) 
-				minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
-			stateMoveScores.put(moveString, worstScore);
-			
+			if (heuristic == null || depth <= maxDepth) { // don't cache if we're not 100% sure this is the best value
+				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
+				stateMoveScores.put(moveString, worstScore);
+			}
 			return worstScore;
 		}
 		
@@ -166,39 +161,40 @@ public class AlphaBeta extends PlayerStrategy {
 				numStatesExpanded++;
 				return stateMachine.getGoal(state, role);		
 			}
-			
-			/* If we reached our cut-off depth, apply heuristic */
-			if (depth > maxDepth) {
-				if (heuristic != null)
-					return heuristic.getScore(state, role);
-				/* Should always not reach here*/
-				return 0;
-			}
-			
-			/* Check if we have this state in cache already */
 			String stateString = canonicalizeStateString(state, alpha, beta);
 			if (useCaching && maxStateScores.get(stateString) != null) 			
 				return maxStateScores.get(stateString);
-			
-			/* Compute maxScore */
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
-			for (Move move : stateMachine.getLegalMoves(state, role)) {
-				if (stopExecution) {
-					break;
+			if (heuristic != null && depth > maxDepth) {
+				for (int i = 0; i < heuristicExpansion; i++) {
+					Integer value = heuristic.getScore(state, role);
+					if (value == null) break;
+					else if (value > bestValue)
+						bestValue = value;
+					alpha = Math.max(alpha, bestValue);
+					if (alpha >= beta) {
+						bestValue = alpha;
+						break;
+					}
 				}
-				int value = minScore(role, move, state, alpha, beta, depth);
-				if (value > bestValue)
-					bestValue = value;
-				alpha = Math.max(alpha, bestValue);
-				if (alpha >= beta) {
-					bestValue = alpha;
-					break;
+			} else {
+				for (Move move : stateMachine.getLegalMoves(state, role)) {
+					if (stopExecution) {
+						break;
+					}
+					int value = minScore(role, move, state, alpha, beta, depth);
+					if (value > bestValue)
+						bestValue = value;
+					alpha = Math.max(alpha, bestValue);
+					if (alpha >= beta) {
+						bestValue = alpha;
+						break;
+					}
 				}
+				if (!stopExecution) // don't cache if we're not 100% sure this is the best value
+					maxStateScores.put(stateString, bestValue);
 			}
-			
-			/* Save computed score in cache */
-			maxStateScores.put(stateString, bestValue);
 			return bestValue;
 		}
 		
@@ -219,6 +215,7 @@ public class AlphaBeta extends PlayerStrategy {
 			 * Using a flag for now
 			 */
 			stopExecution = true;
+			if (heuristic != null) heuristic.onTimeout();
 		}
 	}
 }

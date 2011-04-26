@@ -19,7 +19,7 @@ public class OpponentMobility implements PlayerHeuristic {
 	}
 	
 	@Override
-	public int getScore(MachineState state, Role role) {
+	public Integer getScore(MachineState state, Role role) {
 		try {
 			List<Move> moveList = stateMachine.getLegalMoves(state, role);
 			int sum = 0;

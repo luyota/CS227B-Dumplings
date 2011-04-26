@@ -15,6 +15,7 @@ import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.OpponentMobility;
+import com.dumplings.heuristics.MonteCarlo;
 import com.dumplings.strategies.AlphaBeta;
 
 /**
@@ -27,9 +28,9 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new AlphaBeta(getStateMachine(), 2);
-		//((AlphaBeta) strategy).addHeuristic(new OpponentMobility(getStateMachine()));
-		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
+		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
+		strategy = new AlphaBeta(getStateMachine(), 3);
+		strategy.setHeuristic(new MonteCarlo(getStateMachine()), 3);
 	}
 	
 	/**

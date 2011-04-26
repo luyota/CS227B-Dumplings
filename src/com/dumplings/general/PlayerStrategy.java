@@ -18,4 +18,14 @@ public abstract class PlayerStrategy {
 	public abstract void enableCache(boolean flag);
 	
 	public abstract Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException;
+	
+	protected PlayerHeuristic heuristic;
+	protected Integer heuristicExpansion;
+	public void setHeuristic(PlayerHeuristic heuristic) {
+		setHeuristic(heuristic, 1);
+	}
+	public void setHeuristic(PlayerHeuristic heuristic, Integer expansion) {
+		this.heuristic = heuristic;
+		this.heuristicExpansion = expansion;
+	}
 }

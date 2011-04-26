@@ -5,6 +5,9 @@ import java.util.List;
 
 import util.statemachine.MachineState;
 import util.statemachine.Role;
+import util.statemachine.exceptions.GoalDefinitionException;
+import util.statemachine.exceptions.MoveDefinitionException;
+import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.PlayerHeuristic;
 
@@ -32,7 +35,7 @@ public class WeightedHeuristic implements PlayerHeuristic {
 	}
 
 	@Override
-	public int getScore(MachineState state, Role role) {
+	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		int score = 0;
 		
 		int index = 0;
