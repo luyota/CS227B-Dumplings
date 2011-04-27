@@ -167,17 +167,9 @@ public class AlphaBeta extends PlayerStrategy {
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			if (heuristic != null && depth > maxDepth) {
-				for (int i = 0; i < heuristicExpansion; i++) {
-					Integer value = heuristic.getScore(state, role);
-					if (value == null) break;
-					else if (value > bestValue)
-						bestValue = value;
-					alpha = Math.max(alpha, bestValue);
-					if (alpha >= beta) {
-						bestValue = alpha;
-						break;
-					}
-				}
+				Integer value = heuristic.getScore(state, role);
+				if (value != null) 
+					return value;
 			} else {
 				for (Move move : stateMachine.getLegalMoves(state, role)) {
 					if (stopExecution) {

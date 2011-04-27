@@ -30,7 +30,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 		strategy = new AlphaBeta(getStateMachine(), 3);
-		strategy.setHeuristic(new MonteCarlo(getStateMachine()), 3);
+		strategy.setHeuristic(new MonteCarlo(getStateMachine()));
 	}
 	
 	/**
