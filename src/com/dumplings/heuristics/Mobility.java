@@ -12,6 +12,7 @@ import com.dumplings.general.PlayerHeuristic;
 
 public class Mobility extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine = null;
+	
 	public Mobility(StateMachine stateMachine) {
 		this.stateMachine = stateMachine;
 	}
@@ -19,7 +20,7 @@ public class Mobility extends AbstractHeuristic implements PlayerHeuristic {
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		int score = Math.min(stateMachine.getLegalMoves(state, role).size(), 100);
-		System.out.println("Mobiility score: " + score);
+		//System.out.println("Mobiility score: " + score);
 		return score;
 	}
 }

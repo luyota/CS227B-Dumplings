@@ -20,7 +20,7 @@ public class Focus extends AbstractHeuristic implements PlayerHeuristic {
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		int score = Math.max(100 - stateMachine.getLegalMoves(state, role).size(), 0);
-		System.out.println("Focus score: " + score);
+		//System.out.println("Focus score: " + score);
 		return score;
 		
 	}

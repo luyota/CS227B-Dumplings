@@ -28,7 +28,7 @@ public final class MobilityPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new AlphaBeta(getStateMachine(), 3);
+		strategy = new AlphaBeta(getStateMachine(), 1);
 		strategy.setHeuristic(new Mobility(getStateMachine()));
 	}
 	

@@ -23,13 +23,16 @@ public class OpponentMobility extends AbstractHeuristic implements PlayerHeurist
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		List<Move> moveList = stateMachine.getLegalMoves(state, role);
+		/*
 		int sum = 0;
 		for (Move move : moveList) {
 			sum += stateMachine.getLegalJointMoves(state, role, move).size();
 		}			
 		int score = Math.min(sum / moveList.size(), 100);
+		*/
 		
-		System.out.println("OpponentMobiility score: " + score);
+		int score = Math.min(stateMachine.getLegalJointMoves(state, role, moveList.get(0)).size(), 100);
+		//System.out.println("OpponentMobiility score: " + score);
 		return score;
 		
 	}
