@@ -1,6 +1,7 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
+import java.util.Random;
 
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
@@ -13,45 +14,33 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
-import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.Mobility;
-import com.dumplings.strategies.AlphaBeta;
-
 /**
- * AlphaBetaPlayer plays by using alpha-beta-pruning
+ * RandomGamer plays a random legal move
  */
-public final class MobilityPlayer extends StateMachineGamer
+public final class RandomGamer extends StateMachineGamer
 {
-	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new AlphaBeta(getStateMachine(), 3);
-		strategy.setHeuristic(new Mobility(getStateMachine()));
+		// Do nothing.
 	}
 	
 	/**
-	 * Selects the best legal move
+	 * Selects a random legal move
 	 */
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		System.out.println("Selecting move...");
-
 		long start = System.currentTimeMillis();
+		Random generator = new Random();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
+		Move selection = moves.get(generator.nextInt(moves.size()));
 
 		long stop = System.currentTimeMillis();
-		
-		System.out.println("Total time (ms): " + (stop - start));
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
-		
-		System.out.println("Finishing move!");
 		return selection;
 	}
 	
@@ -69,7 +58,7 @@ public final class MobilityPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Mobility Dumplings";
+		return "Random Dumplings";
 	}
 
 	@Override

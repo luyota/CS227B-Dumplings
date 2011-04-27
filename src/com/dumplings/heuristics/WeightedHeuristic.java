@@ -9,9 +9,10 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
 
-public class WeightedHeuristic implements PlayerHeuristic {
+public class WeightedHeuristic extends AbstractHeuristic implements PlayerHeuristic {
 	List<PlayerHeuristic> heuristics = new ArrayList<PlayerHeuristic>();
 	List<Double> weights = new ArrayList<Double>();
 	
@@ -26,12 +27,6 @@ public class WeightedHeuristic implements PlayerHeuristic {
 			heuristics.remove(index);
 			weights.remove(index);
 		}
-	}
-	
-	@Override
-	public void onTimeout() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

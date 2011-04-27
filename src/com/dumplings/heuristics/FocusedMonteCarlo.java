@@ -11,12 +11,12 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
 
-public class FocusedMonteCarlo implements PlayerHeuristic {
+public class FocusedMonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private Random generator = new Random();
-	private Boolean stopExecution = false;
 	private int numSamples = 4;
 	
 	public FocusedMonteCarlo(StateMachine sm) {
@@ -69,8 +69,4 @@ public class FocusedMonteCarlo implements PlayerHeuristic {
 		return score / numSamples;
 	}
 
-	@Override
-	public void onTimeout() {
-		stopExecution = true;
-	}
 }

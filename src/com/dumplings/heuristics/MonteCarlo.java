@@ -11,9 +11,10 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
 
-public class MonteCarlo implements PlayerHeuristic {
+public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private Random generator = new Random();
 	private Boolean stopExecution = false;
@@ -46,12 +47,7 @@ public class MonteCarlo implements PlayerHeuristic {
 			}
 			score += stateMachine.getGoal(currentState, role);
 		}
-	
 		return score / numSamples;
 	}
 
-	@Override
-	public void onTimeout() {
-		stopExecution = true;
-	}
 }

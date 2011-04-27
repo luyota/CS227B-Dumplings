@@ -10,11 +10,11 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
 
-public class MobilitySampling implements PlayerHeuristic {
+public class MobilitySampling extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
-	private Boolean stopExecution = false;
 	
 	public MobilitySampling(StateMachine sm) {
 		stateMachine = sm;
@@ -42,10 +42,5 @@ public class MobilitySampling implements PlayerHeuristic {
 			currentState = stateMachine.getNextState(currentState, nextMove);
 		}
 		return stateMachine.getGoal(currentState, role);
-	}
-
-	@Override
-	public void onTimeout() {
-		stopExecution = true;
 	}
 }
