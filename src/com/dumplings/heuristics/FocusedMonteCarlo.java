@@ -13,13 +13,13 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.PlayerHeuristic;
 
-public class MonteCarlo implements PlayerHeuristic {
+public class FocusedMonteCarlo implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private Random generator = new Random();
 	private Boolean stopExecution = false;
 	private int numSamples = 4;
 	
-	public MonteCarlo(StateMachine sm) {
+	public FocusedMonteCarlo(StateMachine sm) {
 		stateMachine = sm;
 	}
 	
@@ -30,6 +30,25 @@ public class MonteCarlo implements PlayerHeuristic {
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		int score = 0;
+		// First decide which next state to apply MonteCarlo to
+		// Reasoning: MonteCarlo will be more accurate for the next state which has more focus
+		List<List<Move>> allMoves= stateMachine.getLegalJointMoves(state);
+		int focus = Integer.MAX_VALUE;
+		for (List<Move> move : allMoves) {
+			if (stopExecution)
+				return null;
+			
+			MachineState nextState = stateMachine.getNextState(state, move);
+			// Get mobility of nextState
+			int newMobility = stateMachine.getLegalMoves(nextState, role).size();
+			if (newMobility < focus) {
+				focus = newMobility;
+				state = nextState;
+			}
+		}
+		if (stateMachine.isTerminal(state))
+			return stateMachine.getGoal(state, role);
+		
 		for (int i = 0; i < numSamples; i++) {
 			MachineState currentState = state;
 			while (!stateMachine.isTerminal(currentState)) {
@@ -40,7 +59,7 @@ public class MonteCarlo implements PlayerHeuristic {
 						return score / i;	// Return average score that we have seen so far
 				}
 				
-				List<List<Move>> allMoves= stateMachine.getLegalJointMoves(currentState);
+				allMoves = stateMachine.getLegalJointMoves(currentState);
 				List<Move> randomMoves = allMoves.get(generator.nextInt(allMoves.size()));
 				currentState = stateMachine.getNextState(currentState, randomMoves);
 			}

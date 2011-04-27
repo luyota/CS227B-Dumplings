@@ -10,21 +10,18 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import com.dumplings.general.PlayerHeuristic;
 
 public class Mobility implements PlayerHeuristic {
-	private boolean isExecuting = false;
 	private StateMachine stateMachine = null;
 	public Mobility(StateMachine stateMachine) {
 		this.stateMachine = stateMachine;
 	}
 	@Override
 	public void onTimeout() {
-		isExecuting = true;
 	}
 
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		
-		int score = stateMachine.getLegalMoves(state, role).size();
-		System.out.println("Mobiility get score: " + score);
+		int score = Math.min(stateMachine.getLegalMoves(state, role).size(), 100);
+		System.out.println("Mobiility score: " + score);
 		return score;
 	}
 }

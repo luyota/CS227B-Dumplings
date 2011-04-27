@@ -161,16 +161,19 @@ public class AlphaBeta extends PlayerStrategy {
 				numStatesExpanded++;
 				return stateMachine.getGoal(state, role);		
 			}
+			
 			String stateString = canonicalizeStateString(state, alpha, beta);
 			if (useCaching && maxStateScores.get(stateString) != null) 			
 				return maxStateScores.get(stateString);
+			
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			if (heuristic != null && depth > maxDepth) {
 				Integer value = heuristic.getScore(state, role);
 				if (value != null) 
 					return value;
-			} else {
+			} 
+			else {
 				for (Move move : stateMachine.getLegalMoves(state, role)) {
 					if (stopExecution) {
 						break;

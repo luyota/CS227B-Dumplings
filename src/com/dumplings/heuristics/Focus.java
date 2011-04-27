@@ -10,21 +10,21 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import com.dumplings.general.PlayerHeuristic;
 
 public class Focus implements PlayerHeuristic {
-	private boolean isExecuting = false;
 	private StateMachine stateMachine = null;
+	
 	public Focus(StateMachine stateMachine) {
 		this.stateMachine = stateMachine;
 	}
+	
 	@Override
 	public void onTimeout() {
-		isExecuting = true;
+
 	}
 
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		
-		int score = 100 - stateMachine.getLegalMoves(state, role).size();
-		System.out.println("Focus get score: " + score);
+		int score = Math.max(100 - stateMachine.getLegalMoves(state, role).size(), 0);
+		System.out.println("Focus score: " + score);
 		return score;
 		
 	}

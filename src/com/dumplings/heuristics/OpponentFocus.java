@@ -14,24 +14,24 @@ import com.dumplings.general.PlayerHeuristic;
 
 public class OpponentFocus implements PlayerHeuristic {
 	private StateMachine stateMachine = null;
+	
 	public OpponentFocus(StateMachine stateMachine) {
 		this.stateMachine = stateMachine;
 	}
+	
 	@Override
 	public void onTimeout() {
 	}
 	
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		
 		List<Move> moveList = stateMachine.getLegalMoves(state, role);
 		int sum = 0;
 		for (Move move : moveList) {
 			sum += stateMachine.getLegalJointMoves(state, role, move).size();
 		}			
-		int score = sum / moveList.size();
-		System.out.println("OpponentFocus get score: " + score);
+		int score = Math.max(100 - sum / moveList.size(), 0);
+		System.out.println("OpponentFocus score: " + score);
 		return score;
-		
 	}
 }
