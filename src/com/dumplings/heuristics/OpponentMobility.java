@@ -6,6 +6,9 @@ import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
 import util.statemachine.StateMachine;
+import util.statemachine.exceptions.GoalDefinitionException;
+import util.statemachine.exceptions.MoveDefinitionException;
+import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.PlayerHeuristic;
 
@@ -19,18 +22,16 @@ public class OpponentMobility implements PlayerHeuristic {
 	}
 	
 	@Override
-	public Integer getScore(MachineState state, Role role) {
-		try {
-			List<Move> moveList = stateMachine.getLegalMoves(state, role);
-			int sum = 0;
-			for (Move move : moveList) {
-				sum += stateMachine.getLegalJointMoves(state, role, move).size();
-			}			
-			int score =100 - sum / moveList.size();
-			System.out.println("OpponentMobiility get score: " + score);
-			return score;
-		} catch (Exception e) {			
-		}
-		return 0;
+	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		
+		List<Move> moveList = stateMachine.getLegalMoves(state, role);
+		int sum = 0;
+		for (Move move : moveList) {
+			sum += stateMachine.getLegalJointMoves(state, role, move).size();
+		}			
+		int score =100 - sum / moveList.size();
+		System.out.println("OpponentMobiility get score: " + score);
+		return score;
+		
 	}
 }

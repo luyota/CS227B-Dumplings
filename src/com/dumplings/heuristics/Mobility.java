@@ -3,6 +3,9 @@ package com.dumplings.heuristics;
 import util.statemachine.MachineState;
 import util.statemachine.Role;
 import util.statemachine.StateMachine;
+import util.statemachine.exceptions.GoalDefinitionException;
+import util.statemachine.exceptions.MoveDefinitionException;
+import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.PlayerHeuristic;
 
@@ -18,13 +21,10 @@ public class Mobility implements PlayerHeuristic {
 	}
 
 	@Override
-	public Integer getScore(MachineState state, Role role) {
-		try {
-			int score = stateMachine.getLegalMoves(state, role).size();
-			System.out.println("Mobiility get score: " + score);
-			return score;
-		} catch (Exception e) {			
-		}
-		return 0;
+	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		
+		int score = stateMachine.getLegalMoves(state, role).size();
+		System.out.println("Mobiility get score: " + score);
+		return score;
 	}
 }
