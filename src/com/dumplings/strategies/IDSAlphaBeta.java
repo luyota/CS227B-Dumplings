@@ -61,6 +61,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		maxDepth = 0;
 		int currentBestValue = Integer.MIN_VALUE;
 		while (!isTimeout) {
+			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
 			maxDepth ++;
 			// The cached value in the previous iteration shouldn't last to the next.
 			// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.			
@@ -193,7 +194,10 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					if (value != null) 
 						return value;
 				} else {
-					return Integer.MIN_VALUE;
+					//Originally I returned Integer.MIN_VALUE; but then I found out that although this move's result is unknown, it's still
+					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larter
+					//than Interger.MIN_VALUE.
+					return 1;					
 				}
 			} 
 			else {
