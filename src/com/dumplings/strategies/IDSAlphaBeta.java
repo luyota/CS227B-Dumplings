@@ -27,7 +27,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private AlphaBetaComputer abc = null;
 	private boolean useCaching = true;
 	private int numStatesExpanded;
-	private int maxDepth;
+	private int maxDepth;	
 	private boolean isTimeout = false;
 	private Timer timer;
 		
@@ -172,6 +172,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
+			//If not even able to reach the end then mark this step as unknown
+			if (worstScore == Integer.MAX_VALUE)
+				return 1;
 			return worstScore;
 		}
 		
@@ -217,6 +220,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (!stopExecution) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(stateString, bestValue);
 			}
+			//If not even able to reach the end then mark this step as unknown which is still better than 0
+			if (bestValue == Integer.MIN_VALUE)
+				return 1;
 			return bestValue;
 		}
 		
