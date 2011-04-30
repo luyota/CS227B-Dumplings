@@ -14,22 +14,20 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.Mobility;
-import com.dumplings.strategies.AlphaBeta;
+import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class MobilityPlayer extends StateMachineGamer
+public final class PureIDSAlphaBetaPlayer extends StateMachineGamer
 {
 	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new IDSAlphaBeta(getStateMachine());
-		strategy = new AlphaBeta(getStateMachine(), 1);
-		strategy.setHeuristic(new Mobility(getStateMachine()));
+		strategy = new IDSAlphaBeta(getStateMachine());
+		
 	}
 	
 	/**
@@ -69,7 +67,7 @@ public final class MobilityPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Mobility Dumplings";
+		return "Pure IDS Alpha-Beta";
 	}
 
 	@Override
