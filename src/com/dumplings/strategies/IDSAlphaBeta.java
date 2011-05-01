@@ -29,12 +29,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private int numStatesExpanded;
 	private int maxDepth;	
 	private boolean isTimeout = false;
+	private double timeoutShare;
 	private Timer timer;
 		
-	public IDSAlphaBeta(StateMachine sm) {
+	public IDSAlphaBeta(StateMachine sm, double ts) {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
+		timeoutShare = ts;
 	}
 	
 	public void enableCache(boolean flag) {
@@ -45,45 +47,66 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		Move bestMove = null;
 		isTimeout = false;
 		
-		
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				System.out.println("Timed out!");
-				// This is used to stop the next iteration for deepening.
-				isTimeout = true;
 				if (abc != null)
 					abc.onTimeout(); // signal calculation thread to stop ASAP					
 			}		
-		}, Math.max(timeout - System.currentTimeMillis() - 500, 0));
+		}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
+		
+		Timer idsTimer = new Timer();
+		idsTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				//System.out.println("That's enough IDS for now!");
+				// This is used to stop the next iteration for deepening.
+				//isTimeout = true;
+			}		
+		}, Math.max(Math.round(((timeout - System.currentTimeMillis()) * timeoutShare)), 0));
 		
 		maxDepth = 0;
 		int currentBestValue = Integer.MIN_VALUE;
-		while (!isTimeout) {
-			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
-			maxDepth ++;
-			// The cached value in the previous iteration shouldn't last to the next.
-			// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.			
-			maxStateScores.clear();
-			minStateScores.clear();
-			// Call the thread that does the computation
-			abc = new AlphaBetaComputer(state, role);
-			abc.start();			
-			try {				
-				abc.join(); // wait until calculation thread finishes
-			} catch (InterruptedException e) {}
-			
-			if (abc.getBestMove() != null && abc.getBestValue() > currentBestValue) {
-				bestMove = abc.getBestMove();
-				currentBestValue = abc.getBestValue();
+		List<Move> moves = stateMachine.getLegalMoves(state, role);
+		if (moves.size() == 1) { // don't keep searching multiple depths if we can only do one thing...
+			bestMove = moves.get(0);
+			currentBestValue = -1;
+		} else {
+			while (true) {
+				// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
+				maxDepth++;
+				//System.out.println("Searching to max depth == " + maxDepth);
+				// The cached value in the previous iteration shouldn't last to the next.
+				// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.			
+				maxStateScores.clear();
+				minStateScores.clear();
+				
+				abc = new AlphaBetaComputer(state, role);
+				abc.start();			
+				try {				
+					abc.join(); // wait until calculation thread finishes
+				} catch (InterruptedException e) {}
+				
+				if (abc.getBestMove() != null && abc.getBestValue() > currentBestValue) {
+					bestMove = abc.getBestMove();
+					currentBestValue = abc.getBestValue();
+				}
+				
+				if (abc.stopExecution)
+					break;
 			}
 		}
 		// Make sure bestMove is not null
 		if (bestMove == null) {
+			System.out.println("Didn't decide on any move. Playing first legal move.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
 		System.out.println("Max Depth: " + maxDepth);
+		timer.cancel();
+		idsTimer.cancel();
+		System.out.println("Playing move with score: " + currentBestValue);
 		return bestMove;
 	}
 	
@@ -134,7 +157,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					if (stopExecution) {
 						break;
 					}
-					int value = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+					// value could be negative if heuristic was used, so use absolute value
+					int value = Math.abs(minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
 					if (value > bestValue) {
 						bestValue = value;
 						bestMove = move;
@@ -154,28 +178,34 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 			int worstScore = Integer.MAX_VALUE;
+			boolean heuristicUsed = false;
 			for (List<Move> jointMove : allJointMoves) {
 				if (stopExecution) {
 					break;
 				}
 				MachineState newState = stateMachine.getNextState(state, jointMove);
 				int newScore = maxScore(role, newState, alpha, beta, depth + 1);
-				if (newScore < worstScore)
-					worstScore = newScore;
+				int testScore = newScore;
+				if (newScore < 0) { // it's a heuristic
+					testScore = -testScore;
+					heuristicUsed = true;
+				}
+				if (testScore < worstScore)
+					worstScore = testScore;
 				beta = Math.min(beta, worstScore);
 				if (beta <= alpha) {
 					worstScore = beta;
 					break;
 				}
 			}
-			if (heuristic == null || depth <= maxDepth) { // don't cache if we're not 100% sure this is the best value
+			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
 			//If not even able to reach the end then mark this step as unknown
 			if (worstScore == Integer.MAX_VALUE)
 				return 1;
-			return worstScore;
+			return heuristicUsed ? -worstScore : worstScore;
 		}
 		
 		private int maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
@@ -191,14 +221,20 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
+			boolean heuristicUsed = false;
 			if (depth > maxDepth) {
+				// only apply heuristics when we've alpha-beta-ed as deep as we're going to go
+				// so heuristics don't slow us down as we're IDS-ing
+				//if (heuristic != null && isTimeout) {
+				
+				// this is as far as we go, so calculate heuristic and be done w/ it
 				if (heuristic != null) {
 					Integer value = heuristic.getScore(state, role);
-					if (value != null) 
-						return value;
+					if (value != null)
+						return -value; // return heuristic scores as negative to differentiate for caching purposes
 				} else {
 					//Originally I returned Integer.MIN_VALUE; but then I found out that although this move's result is unknown, it's still
-					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larter
+					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larger
 					//than Interger.MIN_VALUE.
 					return 1;					
 				}
@@ -209,21 +245,26 @@ public class IDSAlphaBeta extends PlayerStrategy {
 						break;
 					}
 					int value = minScore(role, move, state, alpha, beta, depth);
-					if (value > bestValue)
-						bestValue = value;
+					int testValue = value;
+					if (value < 0) { // it's a heuristic
+						testValue = -testValue;
+						heuristicUsed = true;
+					}
+					if (testValue > bestValue)
+						bestValue = testValue;
 					alpha = Math.max(alpha, bestValue);
 					if (alpha >= beta) {
 						bestValue = alpha;
 						break;
 					}
 				}
-				if (!stopExecution) // don't cache if we're not 100% sure this is the best value
+				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(stateString, bestValue);
 			}
 			//If not even able to reach the end then mark this step as unknown which is still better than 0
 			if (bestValue == Integer.MIN_VALUE)
 				return 1;
-			return bestValue;
+			return heuristicUsed ? -bestValue : bestValue;
 		}
 		
 		/*

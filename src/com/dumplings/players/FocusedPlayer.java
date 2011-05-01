@@ -15,7 +15,7 @@ import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.Focus;
-import com.dumplings.strategies.AlphaBeta;
+import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
@@ -27,8 +27,7 @@ public final class FocusedPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new AlphaBeta(getStateMachine(), 1);
+		strategy = new IDSAlphaBeta(getStateMachine(), 0.5);
 		strategy.setHeuristic(new Focus(getStateMachine()));
 	}
 	

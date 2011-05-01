@@ -68,6 +68,7 @@ public class AlphaBeta extends PlayerStrategy {
 		// Make sure bestMove is not null
 		Move bestMove = abc.getBestMove();
 		if (bestMove == null) {
+			System.out.println("Didn't decide on any move. Playing first legal move.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
 		
@@ -117,7 +118,8 @@ public class AlphaBeta extends PlayerStrategy {
 					if (stopExecution) {
 						break;
 					}
-					int value = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+					// value could be negative if heuristic was used, so use absolute value
+					int value = Math.abs(minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
 					if (value > bestValue) {
 						bestValue = value;
 						bestMove = move;
@@ -137,25 +139,33 @@ public class AlphaBeta extends PlayerStrategy {
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 			int worstScore = Integer.MAX_VALUE;
+			boolean heuristicUsed = false;
 			for (List<Move> jointMove : allJointMoves) {
 				if (stopExecution) {
 					break;
 				}
 				MachineState newState = stateMachine.getNextState(state, jointMove);
 				int newScore = maxScore(role, newState, alpha, beta, depth + 1);
-				if (newScore < worstScore)
-					worstScore = newScore;
-				beta = Math.min(beta, worstScore);
-				if (beta <= alpha) {
-					worstScore = beta;
-					break;
+				int testScore = newScore;
+				if (newScore < 0) { // it's a heuristic
+					testScore = -testScore;
+					heuristicUsed = true;
+				}
+				else {
+					if (testScore < worstScore)
+						worstScore = testScore;
+					beta = Math.min(beta, worstScore);
+					if (beta <= alpha) {
+						worstScore = beta;
+						break;
+					}
 				}
 			}
-			if (heuristic == null || depth <= maxDepth) { // don't cache if we're not 100% sure this is the best value
+			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
-			return worstScore;
+			return heuristicUsed ? -worstScore : worstScore;
 		}
 		
 		private int maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
@@ -171,10 +181,12 @@ public class AlphaBeta extends PlayerStrategy {
 			
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
+			boolean heuristicUsed = false;
 			if (heuristic != null && depth > maxDepth) {
 				Integer value = heuristic.getScore(state, role);
-				if (value != null) 
-					return value;
+				if (value != null) {
+					return -value; // return heuristic scores as negative to differentiate
+				}
 			} 
 			else {
 				for (Move move : stateMachine.getLegalMoves(state, role)) {
@@ -182,18 +194,23 @@ public class AlphaBeta extends PlayerStrategy {
 						break;
 					}
 					int value = minScore(role, move, state, alpha, beta, depth);
-					if (value > bestValue)
-						bestValue = value;
+					int testValue = value;
+					if (value < 0) { // it's a heuristic
+						testValue = -testValue;
+						heuristicUsed = true;
+					}
+					if (testValue > bestValue)
+						bestValue = testValue;
 					alpha = Math.max(alpha, bestValue);
 					if (alpha >= beta) {
 						bestValue = alpha;
 						break;
 					}
 				}
-				if (!stopExecution) // don't cache if we're not 100% sure this is the best value
+				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(stateString, bestValue);
 			}
-			return bestValue;
+			return heuristicUsed ? -bestValue : bestValue;
 		}
 		
 		/*
