@@ -20,25 +20,23 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
-public class AlphaBeta extends PlayerStrategy {
+public class IDSAlphaBeta extends PlayerStrategy {
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	
-	private AlphaBetaComputer abc;
+	private AlphaBetaComputer abc = null;
 	private boolean useCaching = true;
 	private int numStatesExpanded;
-	private int maxDepth;
+	private int maxDepth;	
+	private boolean isTimeout = false;
+	private double timeoutShare;
 	private Timer timer;
-	
-	public AlphaBeta(StateMachine sm) {
-		this(sm, Integer.MAX_VALUE);
-	}
-	
-	public AlphaBeta(StateMachine sm, int maxDepth) {
-		super(sm);
-		this.maxDepth = maxDepth;
+		
+	public IDSAlphaBeta(StateMachine sm, double ts) {
+		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
+		timeoutShare = ts;
 	}
 	
 	public void enableCache(boolean flag) {
@@ -46,32 +44,69 @@ public class AlphaBeta extends PlayerStrategy {
 	}
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
-		// Call the thread that does the computation
-		abc = new AlphaBetaComputer(state, role);
+		Move bestMove = null;
+		isTimeout = false;
 		
-		abc.start();
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				System.out.println("Timed out!");
+				if (abc != null)
+					abc.onTimeout(); // signal calculation thread to stop ASAP					
+			}		
+		}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
 		
-		// And go to sleep, but not longer than the timeout
-		try {
-			timer = new Timer();
-			timer.schedule(new TimerTask() {
-				@Override
-				public void run() {
-					System.out.println("Timed out!");
-					abc.onTimeout(); // signal calculation thread to stop ASAP
-				}		
-			}, Math.max(timeout - System.currentTimeMillis() - 500, 0));
-			abc.join(); // wait until calculation thread finishes
-			timer.cancel(); // stop timer in case it's still going
-		} catch (InterruptedException e) {}
+		Timer idsTimer = new Timer();
+		idsTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				//System.out.println("That's enough IDS for now!");
+				// This is used to stop the next iteration for deepening.
+				//isTimeout = true;
+			}		
+		}, Math.max(Math.round(((timeout - System.currentTimeMillis()) * timeoutShare)), 0));
 		
+		maxDepth = 0;
+		int currentBestValue = Integer.MIN_VALUE;
+		List<Move> moves = stateMachine.getLegalMoves(state, role);
+		if (moves.size() == 1) { // don't keep searching multiple depths if we can only do one thing...
+			bestMove = moves.get(0);
+			currentBestValue = -1;
+		} else {
+			while (true) {
+				// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
+				maxDepth++;
+				//System.out.println("Searching to max depth == " + maxDepth);
+				// The cached value in the previous iteration shouldn't last to the next.
+				// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.			
+				maxStateScores.clear();
+				minStateScores.clear();
+				
+				abc = new AlphaBetaComputer(state, role);
+				abc.start();			
+				try {				
+					abc.join(); // wait until calculation thread finishes
+				} catch (InterruptedException e) {}
+				
+				if (abc.getBestMove() != null && abc.getBestValue() > currentBestValue) {
+					bestMove = abc.getBestMove();
+					currentBestValue = abc.getBestValue();
+				}
+				
+				if (abc.stopExecution)
+					break;
+			}
+		}
 		// Make sure bestMove is not null
-		Move bestMove = abc.getBestMove();
 		if (bestMove == null) {
 			System.out.println("Didn't decide on any move. Playing first legal move.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
-		
+		System.out.println("Max Depth: " + maxDepth);
+		timer.cancel();
+		idsTimer.cancel();
+		System.out.println("Playing move with score: " + currentBestValue);
 		return bestMove;
 	}
 	
@@ -79,6 +114,7 @@ public class AlphaBeta extends PlayerStrategy {
 		private MachineState state;
 		private Role role;
 		private Move bestMove;
+		private int bestValue;
 		private boolean stopExecution = false;
 		
 		public AlphaBetaComputer(MachineState state, Role role) {
@@ -88,6 +124,9 @@ public class AlphaBeta extends PlayerStrategy {
 		
 		public Move getBestMove() {
 			return bestMove;
+		}
+		public int getBestValue() {
+			return bestValue;
 		}
 		
 		public void run() {
@@ -111,7 +150,7 @@ public class AlphaBeta extends PlayerStrategy {
 				bestMove = moves.get(0);
 			} else {
 				bestMove = null;
-				int bestValue = Integer.MIN_VALUE;
+				bestValue = Integer.MIN_VALUE;
 				numStatesExpanded = 1;
 				
 				for (Move move : moves) {
@@ -151,20 +190,21 @@ public class AlphaBeta extends PlayerStrategy {
 					testScore = -testScore;
 					heuristicUsed = true;
 				}
-				else {
-					if (testScore < worstScore)
-						worstScore = testScore;
-					beta = Math.min(beta, worstScore);
-					if (beta <= alpha) {
-						worstScore = beta;
-						break;
-					}
+				if (testScore < worstScore)
+					worstScore = testScore;
+				beta = Math.min(beta, worstScore);
+				if (beta <= alpha) {
+					worstScore = beta;
+					break;
 				}
 			}
 			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
+			//If not even able to reach the end then mark this step as unknown
+			if (worstScore == Integer.MAX_VALUE)
+				return 1;
 			return heuristicUsed ? -worstScore : worstScore;
 		}
 		
@@ -182,10 +222,21 @@ public class AlphaBeta extends PlayerStrategy {
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			boolean heuristicUsed = false;
-			if (heuristic != null && depth > maxDepth) {
-				Integer value = heuristic.getScore(state, role);
-				if (value != null) {
-					return -value; // return heuristic scores as negative to differentiate
+			if (depth > maxDepth) {
+				// only apply heuristics when we've alpha-beta-ed as deep as we're going to go
+				// so heuristics don't slow us down as we're IDS-ing
+				//if (heuristic != null && isTimeout) {
+				
+				// this is as far as we go, so calculate heuristic and be done w/ it
+				if (heuristic != null) {
+					Integer value = heuristic.getScore(state, role);
+					if (value != null)
+						return -value; // return heuristic scores as negative to differentiate for caching purposes
+				} else {
+					//Originally I returned Integer.MIN_VALUE; but then I found out that although this move's result is unknown, it's still
+					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larger
+					//than Interger.MIN_VALUE.
+					return 1;					
 				}
 			} 
 			else {
@@ -210,6 +261,9 @@ public class AlphaBeta extends PlayerStrategy {
 				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(stateString, bestValue);
 			}
+			//If not even able to reach the end then mark this step as unknown which is still better than 0
+			if (bestValue == Integer.MIN_VALUE)
+				return 1;
 			return heuristicUsed ? -bestValue : bestValue;
 		}
 		

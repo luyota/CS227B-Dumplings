@@ -28,13 +28,8 @@ public final class OpponentFocusedPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-<<<<<<< HEAD:src/com/dumplings/assgn3/MobilityPlayer.java
 		strategy = new AlphaBeta(getStateMachine(), 8);
-		strategy.setHeuristic(new Mobility(getStateMachine()));
-=======
-		strategy = new AlphaBeta(getStateMachine(), 3);
 		strategy.setHeuristic(new OpponentFocus(getStateMachine()));
->>>>>>> 4e4da01ef099270a4de0044b1c86c8ec750e86af:src/com/dumplings/players/OpponentFocusedPlayer.java
 	}
 	
 	/**
