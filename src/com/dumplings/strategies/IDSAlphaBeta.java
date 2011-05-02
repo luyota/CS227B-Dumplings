@@ -35,7 +35,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
-	
 	}
 	
 	public void enableCache(boolean flag) {
@@ -56,7 +55,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		}, Math.max((timeout - System.currentTimeMillis() - 500), 0));
 		
 		maxDepth = 0;
-		currentBestValue = Integer.MIN_VALUE;
+		Integer currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		if (moves.size() == 1) { // don't keep searching multiple depths if we can only do one thing...
 			bestMove = moves.get(0);
@@ -186,11 +185,12 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 			/* Check if we already have this state in cache */
-			String stateString = canonicalizeStateString(state, alpha, beta);
+			Integer cacheValue;
 			String moveString = move.toString();
-			Map<String, Integer> stateMoveScores = minStateScores.get(stateString);
-			if (useCaching && stateMoveScores != null && stateMoveScores.get(moveString) != null)
-				return stateMoveScores.get(moveString);
+			String alphaBetaStateString = canonicalizeAlphaBetaStateString(state, alpha, beta);
+			Map<String, Integer> stateMoveScores = minStateScores.get(alphaBetaStateString);
+			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null)
+				return cacheValue;
 			
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
@@ -228,7 +228,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				return null;
 			
 			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
-				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
+				if (stateMoveScores == null) minStateScores.put(alphaBetaStateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
 
@@ -242,9 +242,15 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				return stateMachine.getGoal(state, role);		
 			}
 			
-			String stateString = canonicalizeStateString(state, alpha, beta);
-			if (useCaching && maxStateScores.get(stateString) != null) 			
-				return maxStateScores.get(stateString);
+			String stateString = canonicalizeStateString(state);
+			Integer cacheValue;
+			if (externalCache != null && (cacheValue = externalCache.get(stateString)) != null) {
+				System.out.println("EXTERNAL CACHE HIT");
+				return cacheValue;
+			}
+			String alphaBetaStateString = canonicalizeAlphaBetaStateString(stateString, alpha, beta);
+			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) 			
+				return cacheValue;
 			
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
@@ -300,7 +306,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					return null;
 					
 				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
-					maxStateScores.put(stateString, bestValue);
+					maxStateScores.put(alphaBetaStateString, bestValue);
 				
 				return heuristicUsed ? -bestValue : bestValue;
 			}
@@ -309,12 +315,19 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		/*
 		 * This function makes sure we don't distinguish between same states
 		 */
-		private String canonicalizeStateString(MachineState state, int alpha, int beta) {
+		private String canonicalizeStateString(MachineState state) {
 			Set<String> sortedStateContents = new TreeSet<String>();
-			for (GdlSentence gdl : state.getContents()) {
+			for (GdlSentence gdl : state.getContents())
 				sortedStateContents.add(gdl.toString());
-			}
-			return alpha + " " + beta + " " + sortedStateContents.toString();
+			return sortedStateContents.toString();
+		}
+		
+		private String canonicalizeAlphaBetaStateString(MachineState state, int alpha, int beta) {
+			return alpha + " " + beta + " " + canonicalizeStateString(state);
+		}
+		
+		private String canonicalizeAlphaBetaStateString(String stateString, int alpha, int beta) {
+			return alpha + " " + beta + " " + stateString;
 		}
 
 		@Override

@@ -21,8 +21,8 @@ import com.dumplings.strategies.AlphaBeta;
 public abstract class PlayerStrategy {
 	protected StateMachine stateMachine;
 	protected AbstractHeuristic heuristic;
-	public Integer currentBestValue;
 	public MetaGamer metaGamer = new MetaGamer();
+	protected Map<String, Integer> externalCache;
 	
 	public PlayerStrategy(StateMachine sm) {
 		this.stateMachine = sm;
@@ -133,4 +133,7 @@ public abstract class PlayerStrategy {
 		}
 	}
 	
+	public void setExternalCache(Map<String, Integer> cache) {
+		this.externalCache = cache;
+	}
 }
