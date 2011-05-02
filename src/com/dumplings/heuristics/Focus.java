@@ -7,18 +7,14 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
 
-public class Focus implements PlayerHeuristic {
+public class Focus extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine = null;
 	
 	public Focus(StateMachine stateMachine) {
 		this.stateMachine = stateMachine;
-	}
-	
-	@Override
-	public void onTimeout() {
-
 	}
 
 	@Override

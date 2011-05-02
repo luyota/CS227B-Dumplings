@@ -1,7 +1,6 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
-import java.util.Random;
 
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
@@ -14,33 +13,45 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
+import com.dumplings.general.PlayerStrategy;
+import com.dumplings.heuristics.Focus;
+import com.dumplings.strategies.AlphaBeta;
+
 /**
- * RandomGamer plays a random legal move
+ * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class RandomGamer extends StateMachineGamer
+public final class FocusedPlayer extends StateMachineGamer
 {
+	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		// Do nothing.
+		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
+		strategy = new AlphaBeta(getStateMachine(), 3);
+		strategy.setHeuristic(new Focus(getStateMachine()));
 	}
 	
 	/**
-	 * Selects a random legal move
+	 * Selects the best legal move
 	 */
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		System.out.println("Selecting move...");
+
 		long start = System.currentTimeMillis();
-		Random generator = new Random();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = moves.get(generator.nextInt(moves.size()));
+		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();
+		
+		System.out.println("Total time (ms): " + (stop - start));
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
+		
+		System.out.println("Finishing move!");
 		return selection;
 	}
 	
@@ -58,7 +69,7 @@ public final class RandomGamer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Random Dumplings";
+		return "Focus Dumplings";
 	}
 
 	@Override

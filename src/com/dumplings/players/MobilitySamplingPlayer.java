@@ -1,4 +1,4 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
 
@@ -14,13 +14,13 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.Focus;
+import com.dumplings.heuristics.MobilitySampling;
 import com.dumplings.strategies.AlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class FocusedPlayer extends StateMachineGamer
+public final class MobilitySamplingPlayer extends StateMachineGamer
 {
 	PlayerStrategy strategy;
 	
@@ -29,7 +29,7 @@ public final class FocusedPlayer extends StateMachineGamer
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 		strategy = new AlphaBeta(getStateMachine(), 3);
-		strategy.setHeuristic(new Focus(getStateMachine()));
+		strategy.setHeuristic(new MobilitySampling(getStateMachine()));
 	}
 	
 	/**
@@ -69,7 +69,7 @@ public final class FocusedPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Focus Dumplings";
+		return "Mobility Sampling Dumplings";
 	}
 
 	@Override

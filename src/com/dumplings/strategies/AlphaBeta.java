@@ -102,6 +102,9 @@ public class AlphaBeta extends PlayerStrategy {
 		}
 		
 		public void getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException { 		
+			stopExecution = false;
+			if (heuristic != null)
+				heuristic.reset();
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
 			if (moves.size() == 1) {
 				bestMove = moves.get(0);

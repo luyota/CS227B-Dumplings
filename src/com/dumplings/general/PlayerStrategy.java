@@ -10,7 +10,7 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 
 public abstract class PlayerStrategy {
 	protected StateMachine stateMachine;
-	protected PlayerHeuristic heuristic;
+	protected AbstractHeuristic heuristic;
 	
 	public PlayerStrategy(StateMachine sm) {
 		this.stateMachine = sm;
@@ -20,7 +20,7 @@ public abstract class PlayerStrategy {
 	
 	public abstract Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException;
 	
-	public void setHeuristic(PlayerHeuristic heuristic) {
+	public void setHeuristic(AbstractHeuristic heuristic) {
 		this.heuristic = heuristic;
 	}
 }

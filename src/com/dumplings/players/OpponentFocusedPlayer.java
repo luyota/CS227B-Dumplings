@@ -1,4 +1,4 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
 
@@ -14,14 +14,13 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.OpponentMobility;
-import com.dumplings.heuristics.MonteCarlo;
+import com.dumplings.heuristics.OpponentFocus;
 import com.dumplings.strategies.AlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class AlphaBetaPlayer extends StateMachineGamer
+public final class OpponentFocusedPlayer extends StateMachineGamer
 {
 	PlayerStrategy strategy;
 	
@@ -29,8 +28,13 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
+<<<<<<< HEAD:src/com/dumplings/assgn3/MobilityPlayer.java
+		strategy = new AlphaBeta(getStateMachine(), 8);
+		strategy.setHeuristic(new Mobility(getStateMachine()));
+=======
 		strategy = new AlphaBeta(getStateMachine(), 3);
-		strategy.setHeuristic(new MonteCarlo(getStateMachine()));
+		strategy.setHeuristic(new OpponentFocus(getStateMachine()));
+>>>>>>> 4e4da01ef099270a4de0044b1c86c8ec750e86af:src/com/dumplings/players/OpponentFocusedPlayer.java
 	}
 	
 	/**
@@ -70,7 +74,7 @@ public final class AlphaBetaPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Alpha-Beta Dumplings";
+		return "Opponent Focus Dumplings";
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
 import java.util.Random;
@@ -14,40 +14,33 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
-import com.dumplings.general.PlayerStrategy;
-import com.dumplings.strategies.MiniMax;
-
 /**
- * MiniMaxGamer plays the game using minimax search algorithm.
+ * RandomGamer plays a random legal move
  */
-public final class MiniMaxGamer extends StateMachineGamer
+public final class RandomGamer extends StateMachineGamer
 {
-	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		strategy = new MiniMax(getStateMachine());
-		//strategy.getBestMove(getCurrentState(), getRole(), timeout); // pre-cache during the warmup period
+		// Do nothing.
 	}
 	
 	/**
-	 * Selects a best move
+	 * Selects a random legal move
 	 */
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		long start = System.currentTimeMillis();
+		Random generator = new Random();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
-		
-		System.out.println("Selection: "+ selection.toString());
+		Move selection = moves.get(generator.nextInt(moves.size()));
 
 		long stop = System.currentTimeMillis();
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
-		
 		return selection;
 	}
 	
@@ -65,7 +58,7 @@ public final class MiniMaxGamer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "MiniMax Dumplings";
+		return "Random Dumplings";
 	}
 
 	@Override

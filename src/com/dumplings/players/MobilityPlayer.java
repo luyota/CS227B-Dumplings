@@ -1,4 +1,4 @@
-package com.dumplings.assgn3;
+package com.dumplings.players;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public final class MobilityPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new AlphaBeta(getStateMachine(), 8);
+		strategy = new AlphaBeta(getStateMachine(), 3);
 		strategy.setHeuristic(new Mobility(getStateMachine()));
 	}
 	
