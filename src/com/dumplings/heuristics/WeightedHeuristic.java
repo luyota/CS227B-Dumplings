@@ -1,7 +1,7 @@
 package com.dumplings.heuristics;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import util.statemachine.MachineState;
 import util.statemachine.Role;
@@ -10,36 +10,40 @@ import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.AbstractHeuristic;
-import com.dumplings.general.PlayerHeuristic;
 
-public class WeightedHeuristic extends AbstractHeuristic implements PlayerHeuristic {
-	List<PlayerHeuristic> heuristics = new ArrayList<PlayerHeuristic>();
-	List<Double> weights = new ArrayList<Double>();
+public class WeightedHeuristic extends AbstractHeuristic {
+	Map<AbstractHeuristic, Double> weightMap = new HashMap<AbstractHeuristic, Double>();
 	
-	public void addHeuristic(PlayerHeuristic heuristic, double weight) {
-		heuristics.add(heuristic);
-		weights.add(weight);
+	public WeightedHeuristic(Map<AbstractHeuristic, Double> weightMap) {
+		this.weightMap = weightMap;
 	}
 	
-	public void removeHeuristic(PlayerHeuristic heuristic) {
-		int index = heuristics.indexOf(heuristic);
-		if (index != -1) {
-			heuristics.remove(index);
-			weights.remove(index);
-		}
+	public void addHeuristic(AbstractHeuristic heuristic, double weight) {
+		weightMap.put(heuristic, weight);
+	}
+	
+	public void removeHeuristic(AbstractHeuristic heuristic) {
+		weightMap.remove(heuristic);
 	}
 
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		int score = 0;
 		
-		int index = 0;
-		for (PlayerHeuristic heuristic : heuristics) {
-			score += weights.get(index) * heuristic.getScore(state, role);
-		
-			index++;
+		for (AbstractHeuristic heuristic : weightMap.keySet()) {
+			if (stopExecution)
+				break;
+			score += weightMap.get(heuristic) * heuristic.getScore(state, role);
 		}
+		
 		return score;
 	}
 
+	@Override
+	public void onTimeout() {
+		stopExecution = true;
+		for (AbstractHeuristic heuristic : weightMap.keySet()) {
+			heuristic.onTimeout();
+		}
+	}
 }

@@ -57,12 +57,14 @@ public final class PureIDSAlphaBetaPlayer extends StateMachineGamer
 		
 		strategy.currentBestValue = 0;
 		/* Let's have some sound effects! */
+		/*
 		if (strategy.currentBestValue == 0) {
 			playSound("lose.wav");
 		}
 		else if (strategy.currentBestValue == 100) {
 			playSound("win.wav");
 		}
+		*/
 		
 		System.out.println("Finishing move!");
 		return selection;
