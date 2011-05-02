@@ -31,6 +31,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private boolean isTimeout = false;
 	private double timeoutShare;
 	private Timer timer;
+	
 		
 	public IDSAlphaBeta(StateMachine sm, double ts) {
 		super(sm);		
@@ -55,7 +56,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (abc != null)
 					abc.onTimeout(); // signal calculation thread to stop ASAP					
 			}		
-		}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
+		}, Math.max((timeout - System.currentTimeMillis() - 500), 0));
 		
 		Timer idsTimer = new Timer();
 		idsTimer.schedule(new TimerTask() {
@@ -68,7 +69,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		}, Math.max(Math.round(((timeout - System.currentTimeMillis()) * timeoutShare)), 0));
 		
 		maxDepth = 0;
-		int currentBestValue = Integer.MIN_VALUE;
+		currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		if (moves.size() == 1) { // don't keep searching multiple depths if we can only do one thing...
 			bestMove = moves.get(0);

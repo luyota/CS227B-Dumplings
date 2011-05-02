@@ -11,6 +11,7 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 public abstract class PlayerStrategy {
 	protected StateMachine stateMachine;
 	protected AbstractHeuristic heuristic;
+	public int currentBestValue;
 	
 	public PlayerStrategy(StateMachine sm) {
 		this.stateMachine = sm;
