@@ -21,7 +21,7 @@ import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
 public class MiniMax extends PlayerStrategy {
-	Map<String, Integer> maxStateScores;
+	public Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	private MiniMaxComputer mm;
 	private boolean useCaching = true;

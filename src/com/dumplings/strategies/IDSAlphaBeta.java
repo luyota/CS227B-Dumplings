@@ -66,7 +66,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				maxDepth++;
 				//System.out.println("Searching to max depth == " + maxDepth);
 				// The cached value in the previous iteration shouldn't last to the next.
-				// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.			
+				// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.
+				//TODO: Remove these two lines.
 				maxStateScores.clear();
 				minStateScores.clear();
 				
