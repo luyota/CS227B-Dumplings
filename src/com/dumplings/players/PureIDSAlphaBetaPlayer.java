@@ -1,6 +1,13 @@
 package com.dumplings.players;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
@@ -48,6 +55,17 @@ public final class PureIDSAlphaBetaPlayer extends StateMachineGamer
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
 		
+		strategy.currentBestValue = 0;
+		/* Let's have some sound effects! */
+		/*
+		if (strategy.currentBestValue == 0) {
+			playSound("lose.wav");
+		}
+		else if (strategy.currentBestValue == 100) {
+			playSound("win.wav");
+		}
+		*/
+		
 		System.out.println("Finishing move!");
 		return selection;
 	}
@@ -73,6 +91,19 @@ public final class PureIDSAlphaBetaPlayer extends StateMachineGamer
 	public DetailPanel getDetailPanel() {
 		return new ReflexDetailPanel();
 	}
-
-
+	
+	public static synchronized void playSound(final String url) {
+	    new Thread(new Runnable() {
+	      public void run() {
+	        try {
+	          Clip clip = AudioSystem.getClip();
+	          AudioInputStream inputStream = AudioSystem.getAudioInputStream(PureIDSAlphaBetaPlayer.class.getResourceAsStream(url));
+	          clip.open(inputStream);
+	          clip.start(); 
+	        } catch (Exception e) {
+	          e.printStackTrace();
+	        }
+	      }
+	    }).start();
+	  }
 }

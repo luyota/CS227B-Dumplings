@@ -31,6 +31,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private boolean isTimeout = false;
 	
 	private Timer timer;
+	
 		
 	public IDSAlphaBeta(StateMachine sm) {
 		super(sm);		
@@ -55,10 +56,10 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (abc != null)
 					abc.onTimeout(); // signal calculation thread to stop ASAP					
 			}		
-		}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
-				
+		}, Math.max((timeout - System.currentTimeMillis() - 500), 0));
+		
 		maxDepth = 0;
-		int currentBestValue = Integer.MIN_VALUE;
+		currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		if (moves.size() == 1) { // don't keep searching multiple depths if we can only do one thing...
 			bestMove = moves.get(0);
@@ -93,6 +94,10 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				
 				if (abc.stopExecution)
 					break;
+				if (abc.isSearchComplete) {
+					System.out.println("COMPLETE SEARCH at depth " + maxDepth);
+					break;
+				}
 			}
 		}
 		// Make sure bestMove is not null
@@ -112,6 +117,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		private Move bestMove;
 		private Integer bestValue;
 		private boolean stopExecution = false;
+		private boolean isSearchComplete = true;
 		
 		public AlphaBetaComputer(MachineState state, Role role) {
 			this.state = state;
@@ -155,8 +161,11 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					if (stopExecution) {
 						break;
 					}
+
 					Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 					if (testValue != null) {
+						if (testValue < 0)
+							isSearchComplete = false;
 						// value could be negative if heuristic was used, so use absolute value
 						int value = Math.abs(testValue);
 						if (value > bestValue) {
@@ -164,7 +173,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 							bestMove = move;
 						}
 					} else {
-						//System.out.println("null move set: " + move.toString());
+						isSearchComplete = false;
 						if (nullMove == null)
 							nullMove = move;
 					}
@@ -225,7 +234,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
-			
+
 			return heuristicUsed ? -worstScore : worstScore;
 		}
 		
@@ -249,6 +258,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				//if (heuristic != null && isTimeout) {
 				
 				// this is as far as we go, so calculate heuristic and be done w/ it
+				heuristicUsed = true;
 				if (heuristic != null) {
 					Integer value = heuristic.getScore(state, role);
 					if (value != null)
@@ -258,7 +268,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					//Originally I returned Integer.MIN_VALUE; but then I found out that although this move's result is unknown, it's still
 					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larger
 					//than Interger.MIN_VALUE.
-					return null;					
+					return null;
 				}
 			} 
 			else {
@@ -297,7 +307,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				
 				return heuristicUsed ? -bestValue : bestValue;
 			}
-			
 		}
 		
 		/*
