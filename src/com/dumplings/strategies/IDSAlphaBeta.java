@@ -29,14 +29,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private int numStatesExpanded;
 	private int maxDepth;	
 	private boolean isTimeout = false;
-	private double timeoutShare;
+	
 	private Timer timer;
 		
-	public IDSAlphaBeta(StateMachine sm, double ts) {
+	public IDSAlphaBeta(StateMachine sm) {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
-		timeoutShare = ts;
+	
 	}
 	
 	public void enableCache(boolean flag) {
@@ -56,17 +56,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					abc.onTimeout(); // signal calculation thread to stop ASAP					
 			}		
 		}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
-		
-		Timer idsTimer = new Timer();
-		idsTimer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				//System.out.println("That's enough IDS for now!");
-				// This is used to stop the next iteration for deepening.
-				//isTimeout = true;
-			}		
-		}, Math.max(Math.round(((timeout - System.currentTimeMillis()) * timeoutShare)), 0));
-		
+				
 		maxDepth = 0;
 		int currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
@@ -104,8 +94,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
 		System.out.println("Max Depth: " + maxDepth);
-		timer.cancel();
-		idsTimer.cancel();
+		timer.cancel();		
 		System.out.println("Playing move with score: " + currentBestValue);
 		return bestMove;
 	}
