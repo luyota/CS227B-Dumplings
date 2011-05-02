@@ -27,11 +27,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private AlphaBetaComputer abc = null;
 	private boolean useCaching = true;
 	private int numStatesExpanded;
-	private int maxDepth;	
-	private boolean isTimeout = false;
+	private int maxDepth;
 	
 	private Timer timer;
-	
 		
 	public IDSAlphaBeta(StateMachine sm) {
 		super(sm);		
@@ -45,8 +43,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	}
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
-		Move bestMove = null;
-		isTimeout = false;
+		Move bestMove = null;		
 		
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
