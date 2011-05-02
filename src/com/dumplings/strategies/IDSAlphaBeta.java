@@ -86,6 +86,10 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				
 				if (abc.stopExecution)
 					break;
+				if (abc.isSearchComplete) {
+					System.out.println("COMPLETE SEARCH at depth " + maxDepth);
+					break;
+				}
 			}
 		}
 		// Make sure bestMove is not null
@@ -105,6 +109,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		private Move bestMove;
 		private int bestValue;
 		private boolean stopExecution = false;
+		private boolean isSearchComplete = true;
 		
 		public AlphaBetaComputer(MachineState state, Role role) {
 			this.state = state;
@@ -146,8 +151,11 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					if (stopExecution) {
 						break;
 					}
+					int value = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+					if (value < 0)
+						isSearchComplete = false;
 					// value could be negative if heuristic was used, so use absolute value
-					int value = Math.abs(minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
+					value = Math.abs(value);
 					if (value > bestValue) {
 						bestValue = value;
 						bestMove = move;
@@ -193,7 +201,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			}
 			//If not even able to reach the end then mark this step as unknown
 			if (worstScore == Integer.MAX_VALUE)
-				return 1;
+				worstScore = 1;
 			return heuristicUsed ? -worstScore : worstScore;
 		}
 		
@@ -217,15 +225,11 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				//if (heuristic != null && isTimeout) {
 				
 				// this is as far as we go, so calculate heuristic and be done w/ it
+				heuristicUsed = true;
 				if (heuristic != null) {
 					Integer value = heuristic.getScore(state, role);
 					if (value != null)
 						return -value; // return heuristic scores as negative to differentiate for caching purposes
-				} else {
-					//Originally I returned Integer.MIN_VALUE; but then I found out that although this move's result is unknown, it's still
-					//better than choosing a move that your opponent will have chance to win, in which the value would be 0 which is larger
-					//than Interger.MIN_VALUE.
-					return 1;					
 				}
 			} 
 			else {
@@ -252,7 +256,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			}
 			//If not even able to reach the end then mark this step as unknown which is still better than 0
 			if (bestValue == Integer.MIN_VALUE)
-				return 1;
+				bestValue = 1;
 			return heuristicUsed ? -bestValue : bestValue;
 		}
 		
