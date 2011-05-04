@@ -47,7 +47,7 @@ public class Focus extends AbstractHeuristic implements PlayerHeuristic {
 					if (opponentMoves != null)
 						avgOpponentMoves += opponentMoves.size();
 					else
-						return null;
+						return stateMachine.getGoal(currentState, role);
 				}
 			}
 			if (avgOpponentMoves > 0)

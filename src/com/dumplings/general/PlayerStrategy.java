@@ -63,6 +63,7 @@ public abstract class PlayerStrategy {
 							avg += i;
 						}
 						avg /= heuristicScores.size();
+						System.out.println(heuristic.toString() + " avg score: " + avg);
 						avgScoreMap.put(heuristic, avg);
 						
 						totalAvgScore += avg;
@@ -93,9 +94,9 @@ public abstract class PlayerStrategy {
 							break;
 						
 						// We are essentially playing AlphaBeta with max depth 0
-						PlayerStrategy ourPlayer = new AlphaBeta(stateMachine, 0);
-						ourPlayer.enableCache(false);
-						ourPlayer.setHeuristic(heuristic);
+						//PlayerStrategy ourPlayer = new AlphaBeta(stateMachine, 0);
+						//ourPlayer.enableCache(false);
+						//ourPlayer.setHeuristic(heuristic);
 						
 						// Pick moves for all players
 						MachineState currentState = stateMachine.getInitialState();
@@ -107,7 +108,22 @@ public abstract class PlayerStrategy {
 								
 								if (playerRole.equals(role)) {
 									// Let's use our heuristic player
-									moves.add(ourRoleIndex, ourPlayer.getBestMove(currentState, role, Long.MAX_VALUE));
+									//moves.add(ourRoleIndex, ourPlayer.getBestMove(currentState, role, Long.MAX_VALUE));
+									
+									// Choose the move that maximizes our heuristic
+									List<Move> legalMoves = stateMachine.getLegalMoves(currentState, playerRole);
+									int bestScore = Integer.MIN_VALUE; Move bestMove = null;
+									for (Move move : legalMoves) {
+										// Compute a random opponent move and compute heuristic on that
+										List<Move> jointMove = stateMachine.getRandomJointMove(currentState, playerRole, move);
+										
+										int score =  heuristic.getScore(stateMachine.getNextState(currentState, jointMove), playerRole);
+										if (score > bestScore) {
+											bestScore = score;
+											bestMove = move;
+										}
+									}
+									moves.add(ourRoleIndex, bestMove);
 								}
 								else {
 									// Everyone else is a random player
@@ -120,9 +136,11 @@ public abstract class PlayerStrategy {
 								break;
 							
 							// Advance to next state
+							System.out.println("Advancing state...");
 							currentState = stateMachine.getNextState(currentState, moves);	
 						}
 						
+						System.out.println("Finished match");
 						// Store score of this match
 						if (stateMachine.isTerminal(currentState)) {
 							int score = stateMachine.getGoal(currentState, role);
