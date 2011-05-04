@@ -36,11 +36,14 @@ public final class PureAlphaBetaPlayer extends StateMachineGamer
 	{
 		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 		List<AbstractHeuristic> heuristics = new ArrayList<AbstractHeuristic>();
-		heuristics.add(new MonteCarlo(this.getStateMachine()));
+		//heuristics.add(new MonteCarlo(this.getStateMachine()));
 		heuristics.add(new Mobility(this.getStateMachine()));
 		heuristics.add(new Focus(this.getStateMachine()));
 		
-		Map<AbstractHeuristic, Double> weightMap = strategy.metaGamer.evaluateHeuristics(heuristics, this.getRole(), (int)timeout);
+		Map<AbstractHeuristic, Double> weightMap = strategy.metaGamer.evaluateHeuristics(heuristics, this.getRole(), timeout);
+		for (AbstractHeuristic heuristic : weightMap.keySet()) {
+			System.out.println(heuristic.toString()+": "+weightMap.get(heuristic));
+		}
 		strategy.setHeuristic(new WeightedHeuristic(weightMap));
 	}
 	

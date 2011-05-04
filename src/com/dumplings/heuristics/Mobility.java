@@ -74,4 +74,9 @@ public class Mobility extends AbstractHeuristic implements PlayerHeuristic {
 		}
 		return moves;
 	}
+	
+	@Override
+	public String toString() {
+		return "Mobility";
+	}
 }

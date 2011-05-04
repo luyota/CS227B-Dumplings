@@ -74,4 +74,9 @@ public class Focus extends AbstractHeuristic implements PlayerHeuristic {
 		}
 		return moves;
 	}
+	
+	@Override
+	public String toString() {
+		return "Focus";
+	}
 }
