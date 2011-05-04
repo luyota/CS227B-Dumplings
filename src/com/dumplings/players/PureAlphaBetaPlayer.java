@@ -16,11 +16,9 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.AbstractHeuristic;
-import com.dumplings.general.PlayerHeuristic;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.Focus;
 import com.dumplings.heuristics.Mobility;
-import com.dumplings.heuristics.MonteCarlo;
 import com.dumplings.heuristics.WeightedHeuristic;
 import com.dumplings.strategies.AlphaBeta;
 
@@ -36,7 +34,7 @@ public final class PureAlphaBetaPlayer extends StateMachineGamer
 	{
 		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 		List<AbstractHeuristic> heuristics = new ArrayList<AbstractHeuristic>();
-		//heuristics.add(new MonteCarlo(this.getStateMachine()));
+		
 		heuristics.add(new Mobility(this.getStateMachine()));
 		heuristics.add(new Focus(this.getStateMachine()));
 		

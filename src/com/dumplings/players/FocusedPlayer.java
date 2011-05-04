@@ -14,7 +14,7 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.Focus;
+import com.dumplings.heuristics.HybridFocus;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
@@ -28,7 +28,7 @@ public final class FocusedPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new IDSAlphaBeta(getStateMachine());
-		strategy.setHeuristic(new Focus(getStateMachine()));
+		strategy.setHeuristic(new HybridFocus(getStateMachine()));
 	}
 	
 	/**

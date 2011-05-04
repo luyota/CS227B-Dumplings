@@ -36,6 +36,11 @@ public abstract class PlayerStrategy {
 		this.heuristic = heuristic;
 	}
 	
+	public void cleanup() {
+		if (heuristic != null)
+			heuristic.cleanup();
+	}
+	
 	/*
 	 * Used during start-clock
 	 */
@@ -58,7 +63,8 @@ public abstract class PlayerStrategy {
 					Map<AbstractHeuristic, Double> avgScoreMap = new HashMap<AbstractHeuristic, Double>();
 					for (AbstractHeuristic heuristic : scoreMap.keySet()) {
 						// Calculate average score for this heuristic
-						List<Integer> heuristicScores = scoreMap.get(heuristic); double avg = 0;
+						List<Integer> heuristicScores = scoreMap.get(heuristic); 
+						double avg = 0;
 						for (Integer i : heuristicScores) {
 							avg += i;
 						}
@@ -136,7 +142,6 @@ public abstract class PlayerStrategy {
 								break;
 							
 							// Advance to next state
-							System.out.println("Advancing state...");
 							currentState = stateMachine.getNextState(currentState, moves);	
 						}
 						
