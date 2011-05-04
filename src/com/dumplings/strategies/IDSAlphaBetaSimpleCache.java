@@ -56,6 +56,7 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 	public void setInitialDepth(int d) { this.initialDepth = d; }
 
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
+		long start = System.currentTimeMillis();
 		Move bestMove = null;		
 
 		timer = new Timer();
@@ -103,19 +104,22 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 			if (abc.stopExecution)
 				break;
 			if (abc.isSearchComplete) {
-				System.out.println("COMPLETE SEARCH at depth " + maxDepth);
+				System.out.println(role.toString() + ": Complete search at depth " + maxDepth);
 				break;
 			}
 		}		
 		// Make sure bestMove is not null
 		if (bestMove == null) {
-			System.out.println(role.toString() + " Didn't decide on any move. Playing first legal move.");
+			System.out.println(role.toString() + ": Didn't decide on any move. Playing first legal move.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
-		System.out.println(role.toString() + " Max Depth: " + maxDepth);
-		timer.cancel();		
-		System.out.println(role.toString() + " Playing move with score: " + currentBestValue);
-		System.out.println(role.toString() + "Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
+		timer.cancel();	
+		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
+		System.out.println(role.toString() + ": Playing move with score: " + currentBestValue);
+		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
+		System.out.println(role.toString() + ": # of entries in min/max cache: " + minStateScores.size() + "/" + maxStateScores.size());
+		long stop = System.currentTimeMillis();
+		System.out.println(role.toString() + ": time spent in getBestMove - " + (stop - start));
 		return bestMove;
 	}
 
