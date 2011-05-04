@@ -13,4 +13,12 @@ public class Canonicalizer {
 			sortedStateContents.add(gdl.toString());
 		return sortedStateContents.toString();
 	}
+	
+	public static String stateStringAlphaBeta(MachineState state, int alpha, int beta) {
+		return alpha + " " + beta + " " + stateString(state);
+	}
+	
+	public static String stateStringAlphaBeta(String stateString, int alpha, int beta) {
+		return alpha + " " + beta + " " + stateString;
+	}
 }

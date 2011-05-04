@@ -1,7 +1,6 @@
 package com.dumplings.heuristics;
 
 import java.util.List;
-import java.util.Random;
 
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -16,7 +15,6 @@ import com.dumplings.general.PlayerHeuristic;
 
 public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
-	private Random generator = new Random();
 	private Boolean stopExecution = false;
 	private int numSamples = 1;
 	
@@ -30,23 +28,32 @@ public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		int score = 0;
+		Integer score = null;
 		for (int i = 0; i < numSamples; i++) {
 			MachineState currentState = state;
 			while (!stateMachine.isTerminal(currentState)) {
 				if (stopExecution) {
-					if (i == 0)
-						return null;		// Couldn't even sample one depth charge!
-					else
-						return score / i;	// Return average score that we have seen so far
+					return score == null ? null : score / i;
 				}
 
 				List<Move> randomMoves = stateMachine.getRandomJointMove(currentState);
 				currentState = stateMachine.getNextState(currentState, randomMoves);
 			}
-			score += stateMachine.getGoal(currentState, role);
+			if (score == null)
+				score = stateMachine.getGoal(currentState, role);
+			else
+				score += stateMachine.getGoal(currentState, role);
+			//System.out.println(role + " MonteCarlo sample!");
 		}
-		return score / numSamples;
+		score = score / numSamples;
+		
+		// never ever override forced wins or losses
+		if (score == 0)
+			return 1;
+		if (score == 100)
+			return 99;
+		else
+			return score;
 	}
 
 	@Override

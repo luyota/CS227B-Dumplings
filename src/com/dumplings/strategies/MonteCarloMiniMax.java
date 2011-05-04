@@ -100,6 +100,7 @@ public class MonteCarloMiniMax extends PlayerStrategy {
 			MachineState currentState;
 			int depth;
 			while (!stopExecution) {
+				stateHistory.clear();
 				for (List<Move> moves : allMoves) {
 					if (stopExecution)
 						break;
@@ -120,7 +121,7 @@ public class MonteCarloMiniMax extends PlayerStrategy {
 						depth++;
 					}
 					if (stateMachine.isTerminal(currentState)) {
-						System.out.println("Stepping back from goal at depth " + depth);
+						System.out.println("Stepping back " + historyLength + " moves from goal at depth " + depth);
 						MachineState fakeRoot = stateHistory.peek();
 						
 						List<Move> miniMaxMoves = stateMachine.getLegalMoves(fakeRoot, role);
@@ -131,6 +132,7 @@ public class MonteCarloMiniMax extends PlayerStrategy {
 						}
 					}
 				}
+				historyLength++;
 			}
 			System.out.println("Cache has " + maxStateScores.size() + " entries");
 			return null;

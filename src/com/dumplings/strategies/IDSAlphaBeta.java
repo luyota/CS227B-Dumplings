@@ -3,12 +3,9 @@ package com.dumplings.strategies;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeSet;
 
-import util.gdl.grammar.GdlSentence;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -19,6 +16,7 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
+import com.dumplings.utils.Canonicalizer;
 
 public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
@@ -69,7 +67,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 		maxDepth = initialDepth;
 		Integer currentBestValue = Integer.MIN_VALUE;
-		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		
 		while (true) {
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
@@ -88,22 +85,25 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				abc.join(); // wait until calculation thread finishes
 			} catch (InterruptedException e) {}
 
+			Integer bestValue = abc.getBestValue();
 			if (abc.getBestMove() != null && 
-					((abc.getBestValue() != null && abc.getBestValue() > currentBestValue) ||
-							(abc.getBestValue() == null && currentBestValue <= 0))) {
+				((bestValue != null && bestValue > currentBestValue) ||
+				(abc.bestValue == null && currentBestValue <= 0))) { // <== condition triggered by currentBestValue = 0, below
+				
 				bestMove = abc.getBestMove();
-				if (abc.getBestValue() != null)
-					currentBestValue = abc.getBestValue();
-				else 
+				if (bestValue != null)
+					currentBestValue = bestValue;
+				else {
 					//Prevent the move that leads to an unknown state from substituted 
 					//by the move that leads to a losing state.
-					currentBestValue = 0;
+					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue?
+				}
 			}
 
 			if (abc.stopExecution)
 				break;
 			if (abc.isSearchComplete) {
-				System.out.println(role.toString() + ": Complete search at depth " + maxDepth);
+				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
 		}
@@ -170,6 +170,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 			for (Move move : moves) {
 				if (stopExecution) {
+					isSearchComplete = false;
 					break;
 				}
 
@@ -195,18 +196,17 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				bestValue = null;
 				bestMove = nullMove;
 			}
-
 		}
 
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
 			String moveString = move.toString();
-			String alphaBetaStateString = canonicalizeAlphaBetaStateString(state, alpha, beta);
+			String alphaBetaStateString = Canonicalizer.stateStringAlphaBeta(state, alpha, beta);
 			Map<String, Integer> stateMoveScores = minStateScores.get(alphaBetaStateString);
 			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null) {
 				//System.out.println(role.toString() + ": INTERMEDIATE CACHE HIT");
-				minCacheHit ++;
+				minCacheHit++;
 				return cacheValue;
 			}			
 
@@ -260,16 +260,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				return stateMachine.getGoal(state, role);		
 			}
 
-			String stateString = canonicalizeStateString(state);
+			String stateString = Canonicalizer.stateString(state);
 			Integer cacheValue;
 			if (externalCache != null && (cacheValue = externalCache.get(stateString)) != null) {
-				//System.out.println(role.toString() + ": EXTERNAL CACHE HIT");
 				extCacheHit ++;
 				return cacheValue;
 			}
-			String alphaBetaStateString = canonicalizeAlphaBetaStateString(stateString, alpha, beta);
+			String alphaBetaStateString = Canonicalizer.stateStringAlphaBeta(stateString, alpha, beta);
 			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) {
-				//System.out.println(role.toString() + ": INTERNAL CACHE HIT");
 				maxCacheHit ++;
 				return cacheValue;
 			}			
@@ -334,23 +332,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			}
 		}
 
-		/*
-		 * This function makes sure we don't distinguish between same states
-		 */
-		private String canonicalizeStateString(MachineState state) {
-			Set<String> sortedStateContents = new TreeSet<String>();
-			for (GdlSentence gdl : state.getContents())
-				sortedStateContents.add(gdl.toString());
-			return sortedStateContents.toString();
-		}
-
-		private String canonicalizeAlphaBetaStateString(MachineState state, int alpha, int beta) {
-			return alpha + " " + beta + " " + canonicalizeStateString(state);
-		}
-
-		private String canonicalizeAlphaBetaStateString(String stateString, int alpha, int beta) {
-			return alpha + " " + beta + " " + stateString;
-		}
 
 		@Override
 		public void onTimeout() {
