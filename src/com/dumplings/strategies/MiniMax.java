@@ -40,10 +40,10 @@ public class MiniMax extends PlayerStrategy {
 
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		// Call the thread that does the computation
-		 mm = new MiniMaxComputer(state, role);
-		
-		 mm.start();
-		
+		mm = new MiniMaxComputer(state, role);
+
+		mm.start();
+
 		// And go to sleep, but not longer than the timeout
 		try {
 			timer = new Timer();
@@ -57,16 +57,16 @@ public class MiniMax extends PlayerStrategy {
 			mm.join(); // wait until calculation thread finishes
 			timer.cancel(); // stop timer in case it's still going
 		} catch (InterruptedException e) {}
-		
+
 		// Make sure bestMove is not null
 		Move bestMove = mm.getBestMove();
 		if (bestMove == null) {
 			System.out.println("Didn't decide on any move. Playing first legal move.");
 			bestMove = stateMachine.getLegalMoves(state, role).get(0);
 		}
-		
+
 		return bestMove;
-		
+
 	}
 	private class MiniMaxComputer extends Thread implements TimeoutHandler {
 		private MachineState state;
@@ -106,24 +106,21 @@ public class MiniMax extends PlayerStrategy {
 			stopExecution = false;
 			System.out.println("Getting best move...");
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
-			if (moves.size() == 1) {
-				System.out.println("Expanded 1 state");
-				bestMove = moves.get(0);				
-			} else {
-				bestMove = null;
-				bestValue = Integer.MIN_VALUE;
-				numStatesExpanded = 1;
-				for (Move move : moves) {
-					if (stopExecution) {
-						break;
-					}
-					int value = minScore(role, move, state);
-					if (value > bestValue) {
-						bestValue = value;
-						bestMove = move;
-					}
+
+			bestMove = null;
+			bestValue = Integer.MIN_VALUE;
+			numStatesExpanded = 1;
+			for (Move move : moves) {
+				if (stopExecution) {
+					break;
+				}
+				int value = minScore(role, move, state);
+				if (value > bestValue) {
+					bestValue = value;
+					bestMove = move;
 				}
 			}
+
 		}
 
 		private int minScore(Role role, Move move, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {

@@ -23,27 +23,27 @@ import com.dumplings.general.TimeoutHandler;
 public class IDSAlphaBeta extends PlayerStrategy {
 	Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
-	
+
 	private AlphaBetaComputer abc = null;
 	private boolean useCaching = true;
 	private int numStatesExpanded;
 	private int maxDepth;
-	
+
 	private Timer timer;
-		
+
 	public IDSAlphaBeta(StateMachine sm) {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
 	}
-	
+
 	public void enableCache(boolean flag) {
 		useCaching = flag;
 	}
-	
+
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		Move bestMove = null;		
-		
+
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
@@ -53,7 +53,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					abc.onTimeout(); // signal calculation thread to stop ASAP					
 			}		
 		}, Math.max((timeout - System.currentTimeMillis() - 500), 0));
-		
+
 		maxDepth = 0;
 		Integer currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
@@ -70,16 +70,16 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				//TODO: Remove these two lines.
 				maxStateScores.clear();
 				minStateScores.clear();
-				
+
 				abc = new AlphaBetaComputer(state, role);
 				abc.start();			
 				try {				
 					abc.join(); // wait until calculation thread finishes
 				} catch (InterruptedException e) {}
-				
+
 				if (abc.getBestMove() != null && 
-					((abc.getBestValue() != null && abc.getBestValue() > currentBestValue) ||
-					(abc.getBestValue() == null && currentBestValue <= 0))) {
+						((abc.getBestValue() != null && abc.getBestValue() > currentBestValue) ||
+								(abc.getBestValue() == null && currentBestValue <= 0))) {
 					bestMove = abc.getBestMove();
 					if (abc.getBestValue() != null)
 						currentBestValue = abc.getBestValue();
@@ -88,7 +88,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 						//by the move that leads to a losing state.
 						currentBestValue = 0;
 				}
-				
+
 				if (abc.stopExecution)
 					break;
 				if (abc.isSearchComplete) {
@@ -107,7 +107,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		System.out.println(role.toString() + " Playing move with score: " + currentBestValue);
 		return bestMove;
 	}
-	
+
 	private class AlphaBetaComputer extends Thread implements TimeoutHandler {
 		private MachineState state;
 		private Role role;
@@ -115,19 +115,19 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		private Integer bestValue;
 		private boolean stopExecution = false;
 		private boolean isSearchComplete = true;
-		
+
 		public AlphaBetaComputer(MachineState state, Role role) {
 			this.state = state;
 			this.role = role;
 		}
-		
+
 		public Move getBestMove() {
 			return bestMove;
 		}
 		public Integer getBestValue() {
 			return bestValue;
 		}
-		
+
 		public void run() {
 			try {
 				getBestMove(state, role);
@@ -139,51 +139,49 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				e.printStackTrace();
 			}
 		}
-		
+
 		public void getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException { 		
 			stopExecution = false;
 			if (heuristic != null)
 				heuristic.reset();
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
-			if (moves.size() == 1) {
-				bestMove = moves.get(0);
-			} else {
-				bestMove = null;
-				bestValue = Integer.MIN_VALUE;
-				//The first move that results in an unknown state
-				Move nullMove = null;
-				numStatesExpanded = 1;
-				
-				for (Move move : moves) {
-					if (stopExecution) {
-						break;
-					}
 
-					Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
-					if (testValue != null) {
-						if (testValue < 0)
-							isSearchComplete = false;
-						// value could be negative if heuristic was used, so use absolute value
-						int value = Math.abs(testValue);
-						if (value > bestValue) {
-							bestValue = value;
-							bestMove = move;
-						}
-					} else {
-						isSearchComplete = false;
-						if (nullMove == null)
-							nullMove = move;
-					}
+			bestMove = null;
+			bestValue = Integer.MIN_VALUE;
+			//The first move that results in an unknown state
+			Move nullMove = null;
+			numStatesExpanded = 1;
+
+			for (Move move : moves) {
+				if (stopExecution) {
+					break;
 				}
-								
-				
-				if (bestValue <= 0 && nullMove != null) {
-					bestValue = null;
-					bestMove = nullMove;
+
+				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+				if (testValue != null) {
+					if (testValue < 0)
+						isSearchComplete = false;
+					// value could be negative if heuristic was used, so use absolute value
+					int value = Math.abs(testValue);
+					if (value > bestValue) {
+						bestValue = value;
+						bestMove = move;
+					}
+				} else {
+					isSearchComplete = false;
+					if (nullMove == null)
+						nullMove = move;
 				}
 			}
+
+
+			if (bestValue <= 0 && nullMove != null) {
+				bestValue = null;
+				bestMove = nullMove;
+			}
+
 		}
-		
+
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
@@ -192,7 +190,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			Map<String, Integer> stateMoveScores = minStateScores.get(alphaBetaStateString);
 			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null)
 				return cacheValue;
-			
+
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 			int worstScore = Integer.MAX_VALUE;
@@ -227,7 +225,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			//If not even able to reach the end then mark this step as unknown
 			if (worstScore == Integer.MAX_VALUE)
 				return null;
-			
+
 			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
 				if (stateMoveScores == null) minStateScores.put(alphaBetaStateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
@@ -235,24 +233,24 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 			return heuristicUsed ? -worstScore : worstScore;
 		}
-		
+
 		private Integer maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 			/* First check if this state is terminal */
 			if (stateMachine.isTerminal(state)) { 			
 				numStatesExpanded++;
 				return stateMachine.getGoal(state, role);		
 			}
-			
+
 			String stateString = canonicalizeStateString(state);
 			Integer cacheValue;
 			if (externalCache != null && (cacheValue = externalCache.get(stateString)) != null) {
-				System.out.println("EXTERNAL CACHE HIT");
+				System.out.println(role.toString() + ": EXTERNAL CACHE HIT");
 				return cacheValue;
 			}
 			String alphaBetaStateString = canonicalizeAlphaBetaStateString(stateString, alpha, beta);
 			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) 			
 				return cacheValue;
-			
+
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
@@ -260,7 +258,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				// only apply heuristics when we've alpha-beta-ed as deep as we're going to go
 				// so heuristics don't slow us down as we're IDS-ing
 				//if (heuristic != null && isTimeout) {
-				
+
 				// this is as far as we go, so calculate heuristic and be done w/ it
 				heuristicUsed = true;
 				if (heuristic != null) {
@@ -301,18 +299,18 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				// If no moves better than 0 and there exists some unknown states 
 				if (bestValue == 0 && nullValueReturned)
 					return null;
-				
+
 				//If not even able to reach the end then mark this step as unknown which is still better than 0
 				if (bestValue == Integer.MIN_VALUE)
 					return null;
-					
+
 				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(alphaBetaStateString, bestValue);
-				
+
 				return heuristicUsed ? -bestValue : bestValue;
 			}
 		}
-		
+
 		/*
 		 * This function makes sure we don't distinguish between same states
 		 */
@@ -322,11 +320,11 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				sortedStateContents.add(gdl.toString());
 			return sortedStateContents.toString();
 		}
-		
+
 		private String canonicalizeAlphaBetaStateString(MachineState state, int alpha, int beta) {
 			return alpha + " " + beta + " " + canonicalizeStateString(state);
 		}
-		
+
 		private String canonicalizeAlphaBetaStateString(String stateString, int alpha, int beta) {
 			return alpha + " " + beta + " " + stateString;
 		}
