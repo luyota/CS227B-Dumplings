@@ -15,7 +15,7 @@ import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.strategies.IDSAlphaBeta;
-import com.dumplings.strategies.MonteCarloMiniMax;
+import com.dumplings.strategies.MonteCarloAlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
@@ -28,10 +28,12 @@ public final class EndGameBookPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new IDSAlphaBeta(getStateMachine());
-		metaStrategy = new MonteCarloMiniMax(getStateMachine(), 5);
+		//metaStrategy = new MonteCarloMiniMax(getStateMachine(), 5);
+		metaStrategy = new MonteCarloAlphaBeta(getStateMachine(), 5);
 		
 		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
-		strategy.setExternalCache(((MonteCarloMiniMax)metaStrategy).maxStateScores);
+		//strategy.setExternalCache(((MonteCarloMiniMax)metaStrategy).maxStateScores);
+		strategy.setExternalCache(((MonteCarloAlphaBeta)metaStrategy).maxStateScores);
 	}
 	
 	/**
