@@ -2,6 +2,10 @@ package com.dumplings.players;
 
 import java.util.List;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
@@ -14,28 +18,19 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.strategies.IDSAlphaBeta;
 import com.dumplings.strategies.IDSAlphaBetaSimpleCache;
-import com.dumplings.strategies.MiniMax;
-import com.dumplings.strategies.MonteCarloMiniMax;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
+public final class PureIDSAlphaBetaSimpleCachePlayer extends StateMachineGamer
 {
-	PlayerStrategy strategy, metaStrategy;
+	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new IDSAlphaBetaSimpleCache(getStateMachine());
-		metaStrategy = new IDSAlphaBetaSimpleCache(getStateMachine());
-		((IDSAlphaBetaSimpleCache)metaStrategy).setInitialDepth(Integer.MAX_VALUE - 2);
-		
-		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
-		strategy.setExternalCache(((IDSAlphaBetaSimpleCache)metaStrategy).getMaxStateScores());
-		
 	}
 	
 	/**
@@ -57,6 +52,16 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 
 		notifyObservers(new ReflexMoveSelectionEvent(moves, selection, stop - start));
 		
+		/* Let's have some sound effects! */
+		/*
+		if (strategy.currentBestValue == 0) {
+			playSound("lose.wav");
+		}
+		else if (strategy.currentBestValue == 100) {
+			playSound("win.wav");
+		}
+		*/
+		
 		System.out.println("Finishing move!");
 		return selection;
 	}
@@ -75,11 +80,26 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Complete Search Head Start Dumplings";
+		return "Pure IDS Alpha-Beta Simple cache";
 	}
 
 	@Override
 	public DetailPanel getDetailPanel() {
 		return new ReflexDetailPanel();
 	}
+	
+	public static synchronized void playSound(final String url) {
+	    new Thread(new Runnable() {
+	      public void run() {
+	        try {
+	          Clip clip = AudioSystem.getClip();
+	          AudioInputStream inputStream = AudioSystem.getAudioInputStream(PureIDSAlphaBetaSimpleCachePlayer.class.getResourceAsStream(url));
+	          clip.open(inputStream);
+	          clip.start(); 
+	        } catch (Exception e) {
+	          e.printStackTrace();
+	        }
+	      }
+	    }).start();
+	  }
 }

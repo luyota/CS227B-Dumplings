@@ -20,10 +20,10 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
-public class IDSAlphaBeta extends PlayerStrategy {
+public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
-	private int initialDepth = 0;
+	public Map<String, Integer> getMaxStateScores() { return maxStateScores; }
 		
 	@Override
 	public void cleanup() {
@@ -38,20 +38,23 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private boolean useCaching = true;
 	private int numStatesExpanded;
 	private int maxDepth;
+	private int initialDepth = 0;
 	private int minCacheHit = 0, maxCacheHit = 0, extCacheHit = 0;
 
 	private Timer timer;
 
-	public IDSAlphaBeta(StateMachine sm) {
+	public IDSAlphaBetaSimpleCache(StateMachine sm) {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
 	}
-	
+
 	public void enableCache(boolean flag) {
 		useCaching = flag;
 	}
+	
 	public void setInitialDepth(int d) { this.initialDepth = d; }
+
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		Move bestMove = null;		
 
@@ -103,8 +106,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				System.out.println("COMPLETE SEARCH at depth " + maxDepth);
 				break;
 			}
-		}
-		
+		}		
 		// Make sure bestMove is not null
 		if (bestMove == null) {
 			System.out.println(role.toString() + " Didn't decide on any move. Playing first legal move.");
@@ -195,14 +197,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
 			String moveString = move.toString();
-			String alphaBetaStateString = canonicalizeAlphaBetaStateString(state, alpha, beta);
-			Map<String, Integer> stateMoveScores = minStateScores.get(alphaBetaStateString);
+			String stateString = canonicalizeStateString(state);
+			Map<String, Integer> stateMoveScores = minStateScores.get(stateString);
 			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null) {
 				//System.out.println(role.toString() + ": INTERMEDIATE CACHE HIT");
 				minCacheHit ++;
 				return cacheValue;
 			}			
-
+			boolean isSubtreePruned = false;
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
 			int worstScore = Integer.MAX_VALUE;
@@ -224,6 +226,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					beta = Math.min(beta, worstScore);
 					if (beta <= alpha) {
 						worstScore = beta;
+						isSubtreePruned = true;
 						break;
 					}
 				} else {
@@ -238,8 +241,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			if (worstScore == Integer.MAX_VALUE)
 				return null;
 
-			if (!heuristicUsed) { // don't cache if we're not 100% sure this is the best value
-				if (stateMoveScores == null) minStateScores.put(alphaBetaStateString, (stateMoveScores = new HashMap<String, Integer>()));
+			if (!heuristicUsed || !isSubtreePruned) { // don't cache if we're not 100% sure this is the best value
+				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
 
@@ -252,16 +255,15 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				numStatesExpanded++;
 				return stateMachine.getGoal(state, role);		
 			}
-
+			boolean isSubtreePruned = false;
 			String stateString = canonicalizeStateString(state);
 			Integer cacheValue;
 			if (externalCache != null && (cacheValue = externalCache.get(stateString)) != null) {
 				//System.out.println(role.toString() + ": EXTERNAL CACHE HIT");
 				extCacheHit ++;
 				return cacheValue;
-			}
-			String alphaBetaStateString = canonicalizeAlphaBetaStateString(stateString, alpha, beta);
-			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) {
+			}			
+			if (useCaching && (cacheValue = maxStateScores.get(stateString)) != null) {
 				//System.out.println(role.toString() + ": INTERNAL CACHE HIT");
 				maxCacheHit ++;
 				return cacheValue;
@@ -306,6 +308,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 						alpha = Math.max(alpha, bestValue);
 						if (alpha >= beta) {
 							bestValue = alpha;
+							isSubtreePruned = true;
 							break;
 						}
 					} else {
@@ -320,8 +323,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (bestValue == Integer.MIN_VALUE)
 					return null;
 
-				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
-					maxStateScores.put(alphaBetaStateString, bestValue);
+				if (!stopExecution && !heuristicUsed && !isSubtreePruned) // don't cache if we're not 100% sure this is the best value
+					maxStateScores.put(stateString, bestValue);
 
 				return heuristicUsed ? -bestValue : bestValue;
 			}
@@ -337,13 +340,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			return sortedStateContents.toString();
 		}
 
-		private String canonicalizeAlphaBetaStateString(MachineState state, int alpha, int beta) {
-			return alpha + " " + beta + " " + canonicalizeStateString(state);
-		}
-
-		private String canonicalizeAlphaBetaStateString(String stateString, int alpha, int beta) {
-			return alpha + " " + beta + " " + stateString;
-		}
 
 		@Override
 		public void onTimeout() {
