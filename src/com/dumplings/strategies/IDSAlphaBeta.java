@@ -74,6 +74,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		while (true) {
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
 			maxDepth++;
+			System.out.println(role.toString() + ": Current depth - " + maxDepth);
 			//System.out.println("Searching to max depth == " + maxDepth);
 			// The cached value in the previous iteration shouldn't last to the next.
 			// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.
@@ -114,7 +115,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		}
 		timer.cancel();
 		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
-		System.out.println(role.toString() + ": Playing move with score: " + currentBestValue);
+		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestValue);
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
 		System.out.println(role.toString() + ": # of entries in min/max cache: " + minStateScores.size() + "/" + maxStateScores.size());
 		long stop = System.currentTimeMillis();

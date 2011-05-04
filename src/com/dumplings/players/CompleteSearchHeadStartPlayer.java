@@ -14,6 +14,7 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
+import com.dumplings.heuristics.HybridMobility;
 import com.dumplings.strategies.IDSAlphaBeta;
 import com.dumplings.strategies.IDSAlphaBetaSimpleCache;
 import com.dumplings.strategies.MiniMax;
@@ -29,12 +30,21 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		strategy = new IDSAlphaBetaSimpleCache(getStateMachine());
-		metaStrategy = new IDSAlphaBetaSimpleCache(getStateMachine());
-		((IDSAlphaBetaSimpleCache)metaStrategy).setInitialDepth(Integer.MAX_VALUE - 2);
 		
+//		strategy = new IDSAlphaBetaSimpleCache(getStateMachine());
+//		metaStrategy = new IDSAlphaBetaSimpleCache(getStateMachine());
+//		((IDSAlphaBetaSimpleCache)metaStrategy).setInitialDepth(Integer.MAX_VALUE - 2);
+//		
+//		((IDSAlphaBetaSimpleCache)strategy).setLogging(true);
+//		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
+//		strategy.setExternalCache(((IDSAlphaBetaSimpleCache)metaStrategy).getMaxStateScores());
+		
+		strategy = new IDSAlphaBeta(getStateMachine());
+		metaStrategy = new MiniMax(getStateMachine());		
+
 		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
-		strategy.setExternalCache(((IDSAlphaBetaSimpleCache)metaStrategy).getMaxStateScores());
+		strategy.setExternalCache(((MiniMax)metaStrategy).maxStateScores);
+		strategy.setHeuristic(new HybridMobility(getStateMachine()));
 		
 	}
 	

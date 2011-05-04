@@ -22,7 +22,7 @@ import com.dumplings.general.TimeoutHandler;
 
 public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
-	private Map<String, Map<String, Integer>> minStateScores;
+	private Map<String, Map<String, Integer>> minStateScores;	
 	public Map<String, Integer> getMaxStateScores() { return maxStateScores; }
 		
 	@Override
@@ -40,9 +40,16 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 	private int maxDepth;
 	private int initialDepth = 0;
 	private int minCacheHit = 0, maxCacheHit = 0, extCacheHit = 0;
+	private boolean isLogging = false;
 
 	private Timer timer;
 
+	public void setLogging(boolean isLogging) { this.isLogging = isLogging; }
+	
+	private void log(String msg) {
+		if (isLogging)
+			System.err.println(msg);
+	}
 	public IDSAlphaBetaSimpleCache(StateMachine sm) {
 		super(sm);		
 		maxStateScores = new HashMap<String, Integer>();
@@ -73,9 +80,11 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 		Integer currentBestValue = Integer.MIN_VALUE;
 		List<Move> moves = stateMachine.getLegalMoves(state, role);
 		
+		boolean isChoosingUnknown = false;
 		while (true) {
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
 			maxDepth++;
+			System.out.println(role.toString() + ": Current depth - " + maxDepth);
 			//System.out.println("Searching to max depth == " + maxDepth);
 			// The cached value in the previous iteration shouldn't last to the next.
 			// Not clearing the cache will result in problems. For example, when maxDepth = 2, the values cached are only valid with depth 2.
@@ -95,12 +104,14 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 				bestMove = abc.getBestMove();
 				if (abc.getBestValue() != null)
 					currentBestValue = abc.getBestValue();
-				else 
+				else {
 					//Prevent the move that leads to an unknown state from substituted 
 					//by the move that leads to a losing state.
 					currentBestValue = 0;
+					isChoosingUnknown = true;
+				}
 			}
-
+				
 			if (abc.stopExecution)
 				break;
 			if (abc.isSearchComplete) {
@@ -115,7 +126,9 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 		}
 		timer.cancel();	
 		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
-		System.out.println(role.toString() + ": Playing move with score: " + currentBestValue);
+		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestValue);
+		if (isChoosingUnknown)
+			System.out.println(role.toString() + ": chose unknown");
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
 		System.out.println(role.toString() + ": # of entries in min/max cache: " + minStateScores.size() + "/" + maxStateScores.size());
 		long stop = System.currentTimeMillis();
@@ -203,11 +216,12 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 			String moveString = move.toString();
 			String stateString = canonicalizeStateString(state);
 			Map<String, Integer> stateMoveScores = minStateScores.get(stateString);
-			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null) {
+			/*Shouldn't use cache here*/
+			//if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null) {
 				//System.out.println(role.toString() + ": INTERMEDIATE CACHE HIT");
-				minCacheHit ++;
-				return cacheValue;
-			}			
+				//minCacheHit ++;
+				//return cacheValue;
+			//}			
 			boolean isSubtreePruned = false;
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
@@ -227,7 +241,9 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 					}
 					if (testScore < worstScore)
 						worstScore = testScore;
+					
 					beta = Math.min(beta, worstScore);
+					
 					if (beta <= alpha) {
 						worstScore = beta;
 						isSubtreePruned = true;
@@ -245,10 +261,10 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 			if (worstScore == Integer.MAX_VALUE)
 				return null;
 
-			if (!heuristicUsed || !isSubtreePruned) { // don't cache if we're not 100% sure this is the best value
+			/*if (!stopExecution && !heuristicUsed && !isSubtreePruned) { // don't cache if we're not 100% sure this is the best value
 				if (stateMoveScores == null) minStateScores.put(stateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
-			}
+			}*/
 
 			return heuristicUsed ? -worstScore : worstScore;
 		}
@@ -272,7 +288,7 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 				maxCacheHit ++;
 				return cacheValue;
 			}			
-
+			log(role.toString() + ": cache miss - " + stateString);
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
@@ -308,8 +324,9 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 							heuristicUsed = true;
 						}
 						if (testValue > bestValue)
-							bestValue = testValue;
+							bestValue = testValue;						
 						alpha = Math.max(alpha, bestValue);
+						
 						if (alpha >= beta) {
 							bestValue = alpha;
 							isSubtreePruned = true;
@@ -329,7 +346,7 @@ public class IDSAlphaBetaSimpleCache extends PlayerStrategy {
 
 				if (!stopExecution && !heuristicUsed && !isSubtreePruned) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(stateString, bestValue);
-
+				
 				return heuristicUsed ? -bestValue : bestValue;
 			}
 		}
