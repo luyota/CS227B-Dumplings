@@ -89,7 +89,7 @@ public abstract class PlayerStrategy {
 			
 			// Initialize the score map that will give rise to the weights
 			for (AbstractHeuristic heuristic : heuristics) {
-				scoreMap.put(heuristic, new ArrayList<Integer>());
+				scoreMap.put(heuristic, new ArrayList<Integer>(100));	// set initial capacity to 100
 			}
 			
 			int ourRoleIndex = stateMachine.getRoleIndices().get(role);
@@ -98,11 +98,6 @@ public abstract class PlayerStrategy {
 					for (AbstractHeuristic heuristic : heuristics) {
 						if (stopExecution)
 							break;
-						
-						// We are essentially playing AlphaBeta with max depth 0
-						//PlayerStrategy ourPlayer = new AlphaBeta(stateMachine, 0);
-						//ourPlayer.enableCache(false);
-						//ourPlayer.setHeuristic(heuristic);
 						
 						// Pick moves for all players
 						MachineState currentState = stateMachine.getInitialState();
@@ -113,17 +108,14 @@ public abstract class PlayerStrategy {
 									break;
 								
 								if (playerRole.equals(role)) {
-									// Let's use our heuristic player
-									//moves.add(ourRoleIndex, ourPlayer.getBestMove(currentState, role, Long.MAX_VALUE));
-									
 									// Choose the move that maximizes our heuristic
-									List<Move> legalMoves = stateMachine.getLegalMoves(currentState, playerRole);
+									List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
 									int bestScore = Integer.MIN_VALUE; Move bestMove = null;
 									for (Move move : legalMoves) {
 										// Compute a random opponent move and compute heuristic on that
-										List<Move> jointMove = stateMachine.getRandomJointMove(currentState, playerRole, move);
+										List<Move> jointMove = stateMachine.getRandomJointMove(currentState, role, move);
 										
-										int score =  heuristic.getScore(stateMachine.getNextState(currentState, jointMove), playerRole);
+										int score =  heuristic.getScore(stateMachine.getNextState(currentState, jointMove), role);
 										if (score > bestScore) {
 											bestScore = score;
 											bestMove = move;
@@ -133,9 +125,7 @@ public abstract class PlayerStrategy {
 								}
 								else {
 									// Everyone else is a random player
-									List<Move> legalMoves = stateMachine.getLegalMoves(currentState, playerRole);
-									Random generator = new Random();
-									moves.add(legalMoves.get(generator.nextInt(legalMoves.size())));
+									moves.add(stateMachine.getRandomMove(currentState, playerRole));
 								}
 							}
 							if (stopExecution)

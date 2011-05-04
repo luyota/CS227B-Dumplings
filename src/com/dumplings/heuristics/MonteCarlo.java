@@ -18,7 +18,7 @@ public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private Random generator = new Random();
 	private Boolean stopExecution = false;
-	private int numSamples = 4;
+	private int numSamples = 1;
 	
 	public MonteCarlo(StateMachine sm) {
 		stateMachine = sm;
@@ -40,9 +40,8 @@ public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 					else
 						return score / i;	// Return average score that we have seen so far
 				}
-				
-				List<List<Move>> allMoves= stateMachine.getLegalJointMoves(currentState);
-				List<Move> randomMoves = allMoves.get(generator.nextInt(allMoves.size()));
+
+				List<Move> randomMoves = stateMachine.getRandomJointMove(currentState);
 				currentState = stateMachine.getNextState(currentState, randomMoves);
 			}
 			score += stateMachine.getGoal(currentState, role);
