@@ -36,6 +36,11 @@ public abstract class PlayerStrategy {
 		this.heuristic = heuristic;
 	}
 	
+	public void cleanup() {
+		if (heuristic != null)
+			heuristic.cleanup();
+	}
+	
 	/*
 	 * Used during start-clock
 	 */

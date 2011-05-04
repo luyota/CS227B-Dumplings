@@ -59,7 +59,8 @@ public final class EndGameBookPlayer extends StateMachineGamer
 	
 	@Override
 	public void stateMachineStop() {
-		// Do nothing.
+		strategy.cleanup();
+		metaStrategy.cleanup();
 	}
 
 	/**

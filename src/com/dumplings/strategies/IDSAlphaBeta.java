@@ -21,8 +21,17 @@ import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
 public class IDSAlphaBeta extends PlayerStrategy {
-	Map<String, Integer> maxStateScores;
-	Map<String, Map<String, Integer>> minStateScores;
+	private Map<String, Integer> maxStateScores;
+	private Map<String, Map<String, Integer>> minStateScores;
+		
+	@Override
+	public void cleanup() {
+		if (maxStateScores != null)
+			maxStateScores.clear();
+		if (minStateScores != null)
+			minStateScores.clear();
+		super.cleanup();
+	}
 	
 	private AlphaBetaComputer abc = null;
 	private boolean useCaching = true;
@@ -190,8 +199,10 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			String moveString = move.toString();
 			String alphaBetaStateString = canonicalizeAlphaBetaStateString(state, alpha, beta);
 			Map<String, Integer> stateMoveScores = minStateScores.get(alphaBetaStateString);
-			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null)
+			if (useCaching && stateMoveScores != null && (cacheValue = stateMoveScores.get(moveString)) != null) {
+				//System.out.println("INTERMEDIATE CACHE HIT");
 				return cacheValue;
+			}
 			
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = stateMachine.getLegalJointMoves(state, role, move);
@@ -246,12 +257,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			String stateString = canonicalizeStateString(state);
 			Integer cacheValue;
 			if (externalCache != null && (cacheValue = externalCache.get(stateString)) != null) {
-				System.out.println("EXTERNAL CACHE HIT");
+				//System.out.println("EXTERNAL CACHE HIT");
 				return cacheValue;
 			}
 			String alphaBetaStateString = canonicalizeAlphaBetaStateString(stateString, alpha, beta);
-			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) 			
+			if (useCaching && (cacheValue = maxStateScores.get(alphaBetaStateString)) != null) {
+				//System.out.println("INTERNAL CACHE HIT");
 				return cacheValue;
+			}
 			
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
