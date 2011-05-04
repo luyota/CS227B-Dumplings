@@ -34,6 +34,10 @@ public class OpponentMobility extends AbstractHeuristic implements PlayerHeurist
 		int score = Math.min(stateMachine.getLegalJointMoves(state, role, moveList.get(0)).size(), 100);
 		//System.out.println("OpponentMobiility score: " + score);
 		return score;
-		
+	}
+	
+	@Override
+	public String toString() {
+		return "OpponentMobility";
 	}
 }

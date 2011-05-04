@@ -33,4 +33,9 @@ public class OpponentFocus extends AbstractHeuristic implements PlayerHeuristic 
 		//System.out.println("OpponentFocus score: " + score);
 		return score;
 	}
+	
+	@Override
+	public String toString() {
+		return "OpponentFocus";
+	}
 }

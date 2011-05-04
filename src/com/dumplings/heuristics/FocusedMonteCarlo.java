@@ -69,4 +69,8 @@ public class FocusedMonteCarlo extends AbstractHeuristic implements PlayerHeuris
 		return score / numSamples;
 	}
 
+	@Override
+	public String toString() {
+		return "FocusedMonteCarlo";
+	}
 }

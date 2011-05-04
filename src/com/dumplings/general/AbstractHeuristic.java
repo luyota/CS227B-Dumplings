@@ -11,4 +11,6 @@ public abstract class AbstractHeuristic implements TimeoutHandler, PlayerHeurist
 	public void onTimeout() {
 		stopExecution = true;
 	}
+	
+	public void cleanup() {};
 }

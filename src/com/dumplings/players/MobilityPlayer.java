@@ -14,7 +14,7 @@ import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.Mobility;
+import com.dumplings.heuristics.HybridMobility;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
@@ -28,7 +28,7 @@ public final class MobilityPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		strategy = new IDSAlphaBeta(getStateMachine());
-		strategy.setHeuristic(new Mobility(getStateMachine()));
+		strategy.setHeuristic(new HybridMobility(getStateMachine()));
 	}
 	
 	/**

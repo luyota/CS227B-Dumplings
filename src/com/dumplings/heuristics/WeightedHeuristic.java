@@ -41,9 +41,16 @@ public class WeightedHeuristic extends AbstractHeuristic {
 
 	@Override
 	public void onTimeout() {
+		System.out.println("WeightedHeuristic timed out");
+		
 		stopExecution = true;
 		for (AbstractHeuristic heuristic : weightMap.keySet()) {
 			heuristic.onTimeout();
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return "WeightedHeuristic";
 	}
 }

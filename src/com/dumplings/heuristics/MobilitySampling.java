@@ -43,4 +43,9 @@ public class MobilitySampling extends AbstractHeuristic implements PlayerHeurist
 		}
 		return stateMachine.getGoal(currentState, role);
 	}
+	
+	@Override
+	public String toString() {
+		return "MobilitySampling";
+	}
 }

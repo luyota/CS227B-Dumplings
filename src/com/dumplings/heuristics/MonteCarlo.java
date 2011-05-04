@@ -50,4 +50,8 @@ public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 		return score / numSamples;
 	}
 
+	@Override
+	public String toString() {
+		return "MonteCarlo";
+	}
 }
