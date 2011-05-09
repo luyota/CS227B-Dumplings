@@ -68,8 +68,11 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public int getGoal(MachineState state, Role role)
 	throws GoalDefinitionException {
-		// TODO: Compute the goal for role in state.
-		return -1;
+		Set<Proposition> goalPropositions = propNet.getGoalPropositions().get(role);
+		if (goalPropositions.size() != 1)
+			throw new GoalDefinitionException(state, role);
+		
+		return getGoalValue(goalPropositions.iterator().next());
 	}
 	
 	/**
