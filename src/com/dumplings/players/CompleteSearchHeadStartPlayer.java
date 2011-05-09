@@ -10,15 +10,13 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.implementation.prover.ProverStateMachine;
+import util.statemachine.implementation.propnet.PropNetStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.HybridMobility;
 import com.dumplings.strategies.IDSAlphaBeta;
-import com.dumplings.strategies.IDSAlphaBetaSimpleCache;
 import com.dumplings.strategies.MiniMax;
-import com.dumplings.strategies.MonteCarloMiniMax;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
@@ -81,7 +79,7 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 	 */
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ProverStateMachine();
+		return new PropNetStateMachine();
 	}
 	@Override
 	public String getName() {
