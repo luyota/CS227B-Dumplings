@@ -93,7 +93,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	public List<Move> getLegalMoves(MachineState state, Role role)
 	throws MoveDefinitionException {
 		// TODO: Compute legal moves.
-		return null;
+		List<Move> moves = new ArrayList<Move>();
+		Set<Proposition> legalPropositions = propNet.getLegalPropositions().get(role);
+		while (legalPropositions.iterator().hasNext()) {
+			Proposition p = legalPropositions.iterator().next();
+			moves.add(DumplingPropNetStateMachine.getMoveFromProposition(p));
+		}
+		return moves;
 	}
 	
 	/**
