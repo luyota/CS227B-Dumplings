@@ -89,12 +89,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public MachineState getInitialState() {
-		for (Proposition p : propNet.getInputPropositions().values()) {
+		for (Proposition p : inputPropositions.values()) {
 			p.setValue(false);
 		}
-		for (Proposition p : propNet.getBasePropositions().values()) {
+		for (Proposition p : basePropositions.values()) {
 			p.setValue(false);
 		}
+		
 		propNet.getInitProposition().setValue(true);
 				
 		for (Proposition p : ordering){
@@ -197,6 +198,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		        toCheck.add(unvisitedProp);
 		        while (!toCheck.isEmpty()) {
 		        	Component comp = toCheck.iterator().next();
+		        	toCheck.remove(comp);
 		        	for (Component input : comp.getInputs()) {
 		            	if (input instanceof Proposition)
 		            		inputs.add((Proposition) input);
