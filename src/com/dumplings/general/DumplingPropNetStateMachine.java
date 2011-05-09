@@ -97,13 +97,15 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		
 		Integer goalValue = null;
 		for (Proposition p : goalPropositions.get(role)) {
-			// check to see if more than two goal propositions are true
+			// Check if more than two goal propositions are true
 			if (p.getValue()) {
-				if (goalValue != null) throw new GoalDefinitionException(state, role);
+				if (goalValue != null) 
+					throw new GoalDefinitionException(state, role);
 			}
 			goalValue = getGoalValue(p);
 		}
-		// must has a goal
+		
+		// If there is no goal, throw exception
 		if (goalValue == null)
 			throw new GoalDefinitionException(state, role);
 		
@@ -146,7 +148,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		
 		List<Move> moves = new ArrayList<Move>();
 		for (Proposition p : legalPropositions.get(role)) {
-			// check to see if more than two goal propositions are true
 			if (p.getValue()) {
 				moves.add(getMoveFromProposition(p));
 			}			
@@ -165,32 +166,38 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	}
 	
 	public void updateState(MachineState state, List<Move> moves) {
+		// Set base propositions
 		for (Proposition p :basePropositions.values()) {
 			p.setValue(false);
 		}
+		
 		for (GdlSentence s : state.getContents()) {
 			basePropositions.get(s.toTerm()).setValue(true);
 		}
-		Map<GdlTerm, Proposition> inputs = propNet.getInputPropositions();
-		for (Proposition p : inputs.values()) {
+		
+		// Set input propositions
+		for (Proposition p : inputPropositions.values()) {
 			p.setValue(false);
 		}
-		// set the input propositions according to moves	
+		
 		if (moves != null) {			
 			List<GdlTerm> does = toDoes(moves);
 			for (GdlTerm term : does) {
-				Proposition p = inputs.get(term);
+				Proposition p = inputPropositions.get(term);
 				p.setValue(true);
 			}
 		}
+		
 		initProposition.setValue(false);
+		
 		// Propagate the values
 		for (Proposition p : ordering){
 			if (p.getInputs().size() == 1) {
 				p.setValue(p.getSingleInput().getValue());
 			}
 		}
-		// when moves = null, clear the cache since it's already one move ahead of the state. 
+		
+		// When moves = null, clear the cache since it's already one move ahead of the state. 
 		if (moves != null)
 			savedState = null;
 		else
