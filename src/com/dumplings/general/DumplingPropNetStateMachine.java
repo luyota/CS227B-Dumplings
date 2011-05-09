@@ -2,6 +2,7 @@ package com.dumplings.general;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public boolean isTerminal(MachineState state) {
+	public boolean isTerminal(MachineState state) {		
 		return propNet.getTerminalProposition().getValue();
 	}
 	
@@ -82,8 +83,20 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public MachineState getInitialState() {
-		// TODO: Compute the initial state.
-		return null;
+		for (Proposition p : propNet.getInputPropositions().values()) {
+			p.setValue(false);
+		}
+		for (Proposition p : propNet.getBasePropositions().values()) {
+			p.setValue(false);
+		}
+		propNet.getInitProposition().setValue(true);
+				
+		for (Proposition p : ordering){
+			if (p.getInputs().size() == 1) {
+				p.setValue(p.getSingleInput().getValue());
+			}
+		}		
+		return getStateFromBase();
 	}
 	
 	/**
@@ -91,8 +104,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
-	throws MoveDefinitionException {
-		// TODO: Compute legal moves.
+	throws MoveDefinitionException {		
 		List<Move> moves = new ArrayList<Move>();
 		Set<Proposition> legalPropositions = propNet.getLegalPropositions().get(role);
 		while (legalPropositions.iterator().hasNext()) {
@@ -108,8 +120,26 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 	throws TransitionDefinitionException {
-		// TODO: Compute the next state.
-		return null;
+		
+		List<GdlTerm> does = toDoes(moves);
+		Map<GdlTerm, Proposition> inputs = propNet.getInputPropositions();
+		
+		// set the input propositions according to moves
+		for (Proposition p : inputs.values()) {
+			p.setValue(false);
+		}		
+		for (GdlTerm term : does) {
+			Proposition p = inputs.get(term);
+			p.setValue(true);
+		}
+		// Propagate the values
+		for (Proposition p : ordering){
+			if (p.getInputs().size() == 1) {
+				p.setValue(p.getSingleInput().getValue());
+			}
+		}	
+				
+		return getStateFromBase();
 	}
 	
 	/**
