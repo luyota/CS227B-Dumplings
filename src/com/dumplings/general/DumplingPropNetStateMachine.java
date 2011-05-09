@@ -38,6 +38,10 @@ public class DumplingPropNetStateMachine extends StateMachine {
     /** The player roles */
     private List<Role> roles;
     
+    /* The propositions, stored here so we don't have to load everytime it's used */
+    private Map<GdlTerm, Proposition> inputPropositions;
+    private Map<GdlTerm, Proposition> basePropositions;
+    
     /**
      * Initializes the PropNetStateMachine. You should compute the topological
      * ordering here. Additionally you may compute the initial state here, at
@@ -47,6 +51,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
     public void initialize(List<Gdl> description) {
         propNet = CachedPropNetFactory.create(description);
         roles = propNet.getRoles();
+        inputPropositions = propNet.getInputPropositions();
+        basePropositions = propNet.getBasePropositions();
         ordering = getOrdering();
     }    
     
@@ -160,18 +166,62 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	{
 	    // List to contain the topological ordering.
 	    List<Proposition> order = new LinkedList<Proposition>();
-	    				
-		// All of the components in the PropNet
-		List<Component> components = new ArrayList<Component>(propNet.getComponents());
 		
 		// All of the propositions in the PropNet.
 		List<Proposition> propositions = new ArrayList<Proposition>(propNet.getPropositions());
 		
-	    // TODO: Compute the topological ordering.		
+		/*
+		 *  We maintain a set of propositions that we have visited, and a set of unvisited propositions.
+		 *  Initially, we add the base and input propositions to the visited set.
+		 *  Next, we go through all unvisited propositions and check for which proposition all inputs
+		 *  have already been visited. We then add that proposition both to the visited set and to the order
+		 */
+		Set<Proposition> visitedPropositions = new HashSet<Proposition>();
+		Set<Proposition> unvisitedPropositions = new HashSet<Proposition>();
+		
+		visitedPropositions.addAll(basePropositions.values());
+		visitedPropositions.addAll(inputPropositions.values());
+		visitedPropositions.add(propNet.getInitProposition()); // not sure if necessary, but shouldn't hurt
+		
+		unvisitedPropositions.addAll(propositions);
+		unvisitedPropositions.removeAll(visitedPropositions);
+		
+		while (!unvisitedPropositions.isEmpty()) {
+			// Pick next proposition whose inputs have all been visited
+			Proposition nextProposition = null;
+			for (Proposition unvisitedProp : unvisitedPropositions) {
+				// Calculate all propositional inputs of unvisitedProp
+				Set<Proposition> inputs = new HashSet<Proposition>();
+		        Set<Component> toCheck = new HashSet<Component>();
+		        
+		        toCheck.add(unvisitedProp);
+		        while (!toCheck.isEmpty()) {
+		        	Component comp = toCheck.iterator().next();
+		        	for (Component input : comp.getInputs()) {
+		            	if (input instanceof Proposition)
+		            		inputs.add((Proposition) input);
+		                else
+		                	toCheck.add(input);
+		            }
+		        }
+		        
+				if (visitedPropositions.containsAll(inputs)) {
+					nextProposition = unvisitedProp;
+					break;
+				}
+			}
+			
+			// Add to visited set and remove from unvisited set
+			visitedPropositions.add(nextProposition);
+			unvisitedPropositions.remove(nextProposition);
+			
+			// Add to order
+			order.add(nextProposition);
+		}
 		
 		return order;
 	}
-	
+
 	/* Already implemented for you */
 	@Override
 	public Move getMoveFromSentence(GdlSentence sentence) {
