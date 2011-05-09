@@ -37,6 +37,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
     private List<Proposition> ordering;
     /** The player roles */
     private List<Role> roles;
+    private MachineState savedState = null;
     
     /* The propositions, stored here so we don't have to load everytime it's used */
     private Map<GdlTerm, Proposition> inputPropositions;
@@ -62,6 +63,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public boolean isTerminal(MachineState state) {		
+		updateState(state, null);
 		return propNet.getTerminalProposition().getValue();
 	}
 	
@@ -75,11 +77,21 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public int getGoal(MachineState state, Role role)
 	throws GoalDefinitionException {
-		Set<Proposition> goalPropositions = propNet.getGoalPropositions().get(role);
-		if (goalPropositions.size() != 1)
+		updateState(state, null);
+		
+		Integer goalValue = null;
+		for (Proposition p : propNet.getGoalPropositions().get(role)) {
+			// check to see if more than two goal propositions are true
+			if (p.getValue()) {
+				if (goalValue != null) throw new GoalDefinitionException(state, role);
+			}
+			goalValue = getGoalValue(p);
+		}
+		// must has a goal
+		if (goalValue == null)
 			throw new GoalDefinitionException(state, role);
 		
-		return getGoalValue(goalPropositions.iterator().next());
+		return goalValue;
 	}
 	
 	/**
@@ -111,11 +123,14 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 	throws MoveDefinitionException {		
+		updateState(state, null);
+		
 		List<Move> moves = new ArrayList<Move>();
-		Set<Proposition> legalPropositions = propNet.getLegalPropositions().get(role);
-		while (legalPropositions.iterator().hasNext()) {
-			Proposition p = legalPropositions.iterator().next();
-			moves.add(DumplingPropNetStateMachine.getMoveFromProposition(p));
+		for (Proposition p : propNet.getLegalPropositions().get(role)) {
+			// check to see if more than two goal propositions are true
+			if (p.getValue()) {
+				moves.add(getMoveFromProposition(p));
+			}			
 		}
 		return moves;
 	}
@@ -126,26 +141,36 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 	throws TransitionDefinitionException {
-		
-		List<GdlTerm> does = toDoes(moves);
+		updateState(state, moves);				
+		return getStateFromBase();
+	}
+	
+	public void updateState(MachineState state, List<Move> moves) {
+		for (Proposition p : propNet.getBasePropositions().values()) {
+			p.setValue(false);
+		}
+		for (GdlSentence s : state.getContents()) {
+			propNet.getBasePropositions().get(s.toTerm()).setValue(true);
+		}
 		Map<GdlTerm, Proposition> inputs = propNet.getInputPropositions();
-		
-		// set the input propositions according to moves
 		for (Proposition p : inputs.values()) {
 			p.setValue(false);
-		}		
-		for (GdlTerm term : does) {
-			Proposition p = inputs.get(term);
-			p.setValue(true);
 		}
+		// set the input propositions according to moves	
+		if (moves != null) {			
+			List<GdlTerm> does = toDoes(moves);
+			for (GdlTerm term : does) {
+				Proposition p = inputs.get(term);
+				p.setValue(true);
+			}
+		}
+		propNet.getInitProposition().setValue(false);
 		// Propagate the values
 		for (Proposition p : ordering){
 			if (p.getInputs().size() == 1) {
 				p.setValue(p.getSingleInput().getValue());
 			}
-		}	
-				
-		return getStateFromBase();
+		}			
 	}
 	
 	/**

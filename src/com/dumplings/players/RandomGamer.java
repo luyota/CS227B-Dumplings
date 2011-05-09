@@ -11,8 +11,9 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
+
+import com.dumplings.general.DumplingPropNetStateMachine;
 
 /**
  * RandomGamer plays a random legal move
@@ -54,7 +55,7 @@ public final class RandomGamer extends StateMachineGamer
 	 */
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ProverStateMachine();
+		return new DumplingPropNetStateMachine();
 	}
 	@Override
 	public String getName() {
