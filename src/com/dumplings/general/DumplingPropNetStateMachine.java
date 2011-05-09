@@ -57,6 +57,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
     @Override
     public void initialize(List<Gdl> description) {
         propNet = CachedPropNetFactory.create(description);        
+        
+        propNet.renderToFile("D:\\propnet.dot");
         roles = propNet.getRoles();
         
         savedState = null;
@@ -69,6 +71,10 @@ public class DumplingPropNetStateMachine extends StateMachine {
         terminalProposition = propNet.getTerminalProposition();
         
         ordering = getOrdering();
+        System.out.println("Ordering:");
+        for (Component c : ordering) {
+        	System.out.println(c);
+        }
     }    
     
 	/**
@@ -79,6 +85,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	public boolean isTerminal(MachineState state) {		
 		if (savedState != state)
 			updateState(state, null);
+		System.out.println("isTerminal: " + getStateFromBase());
 		return terminalProposition.getValue();
 	}
 	
@@ -106,7 +113,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		// must has a goal
 		if (goalValue == null)
 			throw new GoalDefinitionException(state, role);
-		
+		System.out.println("getGoal: " + getStateFromBase());
 		return goalValue;
 	}
 	
@@ -132,6 +139,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				p.setValue(p.getSingleInput().getValue());
 			}
 		}		
+		System.out.println("getInitialState " + getStateFromBase());
 		return getStateFromBase();
 	}
 	
@@ -140,17 +148,20 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
-	throws MoveDefinitionException {		
+	throws MoveDefinitionException {	
+		System.out.println("getLegalMoves before state: " + state);
+		System.out.println("getLegalMoves before: " + getStateFromBase());
 		if (savedState != state)
 			updateState(state, null);
 		
 		List<Move> moves = new ArrayList<Move>();
 		for (Proposition p : legalPropositions.get(role)) {
-			// check to see if more than two goal propositions are true
+			System.out.println("getLegalMoves p: " + p);
 			if (p.getValue()) {
 				moves.add(getMoveFromProposition(p));
 			}			
 		}
+		System.out.println("getLegalMoves after: " + getStateFromBase());
 		return moves;
 	}
 	
@@ -160,7 +171,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 	throws TransitionDefinitionException {		
-		updateState(state, moves);				
+		updateState(state, moves);		
+		System.out.println("getNextState: " + getStateFromBase());
 		return getStateFromBase();
 	}
 	
