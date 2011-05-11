@@ -10,12 +10,13 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
+import com.dumplings.general.AbstractHeuristic;
+import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarlo;
-import com.dumplings.strategies.AlphaBeta;
+import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
@@ -28,8 +29,10 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new AlphaBeta(getStateMachine(), 3);
-		strategy.setHeuristic(new MonteCarlo(getStateMachine()));
+		strategy = new IDSAlphaBeta(getStateMachine());
+		AbstractHeuristic heuristic = new MonteCarlo(getStateMachine());
+		((MonteCarlo)heuristic).setSampleSize(5);
+		strategy.setHeuristic(heuristic);
 	}
 	
 	/**
@@ -65,7 +68,8 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	 */
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ProverStateMachine();
+		//return new ProverStateMachine();
+		return new DumplingPropNetStateMachine();
 	}
 	@Override
 	public String getName() {

@@ -1,8 +1,8 @@
 package com.dumplings.general;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +17,7 @@ import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.Component;
 import util.propnet.architecture.PropNet;
 import util.propnet.architecture.components.Proposition;
-import util.propnet.factory.CachedPropNetFactory;
+import util.propnet.factory.OptimizingPropNetFactory;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -56,9 +56,9 @@ public class DumplingPropNetStateMachine extends StateMachine {
      */
     @Override
     public void initialize(List<Gdl> description) {
-        propNet = CachedPropNetFactory.create(description);        
+        propNet = OptimizingPropNetFactory.create(description);        
         
-        propNet.renderToFile("D:\\propnet.dot");
+        propNet.renderToFile(new File(System.getProperty("user.home"), "propnet.dot").toString());
         roles = propNet.getRoles();
         
         savedState = null;
@@ -85,7 +85,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	public boolean isTerminal(MachineState state) {		
 		if (savedState != state)
 			updateState(state, null);
-		System.out.println("isTerminal: " + getStateFromBase());
+		//System.out.println("isTerminal: " + getStateFromBase());
 		return terminalProposition.getValue();
 	}
 	
@@ -97,8 +97,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined. 
 	 */
 	@Override
-	public int getGoal(MachineState state, Role role)
-	throws GoalDefinitionException {
+	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
 		if (savedState != state)
 			updateState(state, null);
 		
@@ -106,14 +105,16 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		for (Proposition p : goalPropositions.get(role)) {
 			// check to see if more than two goal propositions are true
 			if (p.getValue()) {
-				if (goalValue != null) throw new GoalDefinitionException(state, role);
+				if (goalValue != null) {
+					throw new GoalDefinitionException(state, role);
+				}
+				goalValue = getGoalValue(p); // ...why was this outside the if-statement? bug??
 			}
-			goalValue = getGoalValue(p);
 		}
-		// must has a goal
+		// must have a goal
 		if (goalValue == null)
 			throw new GoalDefinitionException(state, role);
-		System.out.println("getGoal: " + getStateFromBase());
+		//System.out.println("getGoal: " + getStateFromBase());
 		return goalValue;
 	}
 	
@@ -149,19 +150,19 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 	throws MoveDefinitionException {	
-		System.out.println("getLegalMoves before state: " + state);
-		System.out.println("getLegalMoves before: " + getStateFromBase());
+		//System.out.println("getLegalMoves before state: " + state);
+		//System.out.println("getLegalMoves before: " + getStateFromBase());
 		if (savedState != state)
 			updateState(state, null);
 		
 		List<Move> moves = new ArrayList<Move>();
 		for (Proposition p : legalPropositions.get(role)) {
-			System.out.println("getLegalMoves p: " + p);
+			//System.out.println("getLegalMoves p: " + p);
 			if (p.getValue()) {
 				moves.add(getMoveFromProposition(p));
 			}			
 		}
-		System.out.println("getLegalMoves after: " + getStateFromBase());
+		//System.out.println("getLegalMoves after: " + getStateFromBase());
 		return moves;
 	}
 	
@@ -171,13 +172,14 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves)
 	throws TransitionDefinitionException {		
+		//System.out.println("getNextState before: " + getStateFromBase());
 		updateState(state, moves);		
-		System.out.println("getNextState: " + getStateFromBase());
+		//System.out.println("getNextState after: " + getStateFromBase());
 		return getStateFromBase();
 	}
 	
 	public void updateState(MachineState state, List<Move> moves) {
-		for (Proposition p :basePropositions.values()) {
+		for (Proposition p : basePropositions.values()) {
 			p.setValue(false);
 		}
 		for (GdlSentence s : state.getContents()) {
