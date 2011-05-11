@@ -20,11 +20,8 @@ import com.dumplings.general.DumplingPropNetStateMachine;
  */
 public final class RandomGamer extends StateMachineGamer
 {
-	
 	@Override
-	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
-	{
-		// Do nothing.
+	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 	}
 	
 	/**
@@ -47,16 +44,13 @@ public final class RandomGamer extends StateMachineGamer
 	
 	@Override
 	public void stateMachineStop() {
-		// Do nothing.
 	}
 
-	/**
-	 * Uses a ProverStateMachine
-	 */
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new DumplingPropNetStateMachine();
 	}
+	
 	@Override
 	public String getName() {
 		return "Random Dumplings";

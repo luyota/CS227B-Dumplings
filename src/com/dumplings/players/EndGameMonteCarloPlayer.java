@@ -10,10 +10,10 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.implementation.prover.ProverStateMachine;
 import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.AbstractHeuristic;
+import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarlo;
 import com.dumplings.strategies.IDSAlphaBeta;
@@ -35,7 +35,7 @@ public final class EndGameMonteCarloPlayer extends StateMachineGamer
 		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
 		strategy.setExternalCache(((MonteCarloMiniMax)metaStrategy).maxStateScores);
 		AbstractHeuristic heuristic = new MonteCarlo(getStateMachine());
-		((MonteCarlo)heuristic).setSampleSize(3);
+		((MonteCarlo)heuristic).setSampleSize(5);
 		strategy.setHeuristic(heuristic);
 	}
 	
@@ -73,7 +73,8 @@ public final class EndGameMonteCarloPlayer extends StateMachineGamer
 	 */
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new ProverStateMachine();
+		//return new ProverStateMachine();
+		return new DumplingPropNetStateMachine();
 	}
 	@Override
 	public String getName() {
