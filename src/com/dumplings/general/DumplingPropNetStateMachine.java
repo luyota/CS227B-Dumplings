@@ -71,10 +71,12 @@ public class DumplingPropNetStateMachine extends StateMachine {
         terminalProposition = propNet.getTerminalProposition();
         
         ordering = getOrdering();
+        /*
         System.out.println("Ordering:");
         for (Component c : ordering) {
         	System.out.println(c);
         }
+        */
     }    
     
 	/**
@@ -178,14 +180,17 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	}
 	
 	public void updateState(MachineState state, List<Move> moves) {
-		// Set base propositions
-		for (Proposition p :basePropositions.values()) {
-			p.setValue(false);
-		}
-		
-		for (GdlSentence s : state.getContents()) {
-			basePropositions.get(s.toTerm()).setValue(true);
-		}
+		//This if condition doesn't seem to improve the efficiency.
+		//if (savedState == null || state != savedState) {
+			// Set base propositions
+			for (Proposition p :basePropositions.values()) {
+				p.setValue(false);
+			}
+			
+			for (GdlSentence s : state.getContents()) {
+				basePropositions.get(s.toTerm()).setValue(true);
+			}
+		//}
 		
 		// Set input propositions
 		for (Proposition p : inputPropositions.values()) {

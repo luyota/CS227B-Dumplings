@@ -5,7 +5,9 @@ import java.util.List;
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
+import util.statemachine.MachineState;
 import util.statemachine.Move;
+import util.statemachine.Role;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
@@ -38,9 +40,29 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 //		strategy.setExternalCache(((IDSAlphaBetaSimpleCache)metaStrategy).getMaxStateScores());
 		
 		strategy = new IDSAlphaBeta(getStateMachine());
-		metaStrategy = new MiniMax(getStateMachine());		
-
+		
+		metaStrategy = new MiniMax(getStateMachine());
+//		final PlayerStrategy behindTheScene = metaStrategy;
+//		final MachineState state = getCurrentState();
+//		final Role role = getRole();
+//		
+//		(new Thread(new Runnable() {
+//			@Override
+//			public void run() {
+//				try {
+//				behindTheScene.getBestMove(state, role, Integer.MAX_VALUE);
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//				}
+//			}			
+//		})).start();
+		
+		
+		long start = System.currentTimeMillis();
 		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
+		long end = System.currentTimeMillis();		
+		System.out.println("Complete search spent " + (start - end));
+		
 		strategy.setExternalCache(((MiniMax)metaStrategy).maxStateScores);
 		strategy.setHeuristic(new HybridMobility(getStateMachine()));
 		

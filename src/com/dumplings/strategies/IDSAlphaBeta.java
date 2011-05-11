@@ -117,7 +117,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
 		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestValue);
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
-		System.out.println(role.toString() + ": # of entries in min/max cache: " + minStateScores.size() + "/" + maxStateScores.size());
+		System.out.println(role.toString() + ": # of entries in min/max/ext cache: " + minStateScores.size() + "/" + maxStateScores.size() + "/" + ((externalCache == null)?0:externalCache.size()));
 		long stop = System.currentTimeMillis();
 		System.out.println(role.toString() + ": time spent in getBestMove - " + (stop - start));
 		
