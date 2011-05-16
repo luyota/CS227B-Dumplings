@@ -70,7 +70,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		
 		while (true) {
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
-			maxDepth++;
 			System.out.println(role.toString() + ": Current depth - " + maxDepth);
 			//System.out.println("Searching to max depth == " + maxDepth);
 			// The cached value in the previous iteration shouldn't last to the next.
@@ -106,6 +105,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
+			maxDepth++;
 		}
 		
 		// Make sure bestMove is not null

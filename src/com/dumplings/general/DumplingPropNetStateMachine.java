@@ -181,7 +181,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	
 	public void updateState(MachineState state, List<Move> moves) {
 		//This if condition doesn't seem to improve the efficiency.
-		//if (savedState == null || state != savedState) {
+		if (savedState == null || state != savedState) {
 			// Set base propositions
 			for (Proposition p :basePropositions.values()) {
 				p.setValue(false);
@@ -190,7 +190,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			for (GdlSentence s : state.getContents()) {
 				basePropositions.get(s.toTerm()).setValue(true);
 			}
-		//}
+		}
 		
 		// Set input propositions
 		for (Proposition p : inputPropositions.values()) {
