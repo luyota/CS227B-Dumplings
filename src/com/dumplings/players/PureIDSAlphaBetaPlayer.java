@@ -30,7 +30,8 @@ public final class PureIDSAlphaBetaPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		strategy = new IDSAlphaBeta(getStateMachine());
+		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
 	}
 	
 	/**

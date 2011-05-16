@@ -2,6 +2,9 @@ package com.dumplings.general;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,6 +19,7 @@ import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.Component;
 import util.propnet.architecture.PropNet;
+import util.propnet.architecture.components.Or;
 import util.propnet.architecture.components.Proposition;
 import util.propnet.factory.OptimizingPropNetFactory;
 import util.statemachine.MachineState;
@@ -183,7 +187,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		//This if condition doesn't seem to improve the efficiency.
 		if (savedState == null || state != savedState) {
 			// Set base propositions
-			for (Proposition p :basePropositions.values()) {
+			for (Proposition p : basePropositions.values()) {
 				p.setValue(false);
 			}
 			
@@ -389,4 +393,86 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		}
 		return new PropNetMachineState(contents);
 	}
+	
+	public DumplingPropNetStateMachine factorPropNet(Role role) {
+		if (roles.size() > 1)
+			return null;
+		
+		Proposition goalProposition = null;
+		
+		for (Proposition proposition : this.goalPropositions.get(role)) {
+			if (getGoalValue(proposition) == 100) {
+				goalProposition = proposition;
+				break;
+			}
+		}
+		
+		if (goalProposition == null) {
+			return this;
+		}
+		
+		Set<Proposition> visitedPropositions = new HashSet<Proposition>();
+		stepBackToInputs(goalProposition, visitedPropositions);
+		
+		Map<GdlTerm, Proposition> inputs = filterInputs(this.inputPropositions, visitedPropositions);
+		
+		Set<Proposition> legalProps = new HashSet<Proposition>();
+		for (Proposition input : inputs.values()) {
+			legalProps.add(propNet.getLegalInputMap().get(input));
+		}
+		
+		DumplingPropNetStateMachine factor = new DumplingPropNetStateMachine();
+		
+		factor.inputPropositions = inputs;
+		factor.legalPropositions = new HashMap<Role, Set<Proposition>>();
+		factor.legalPropositions.put(role, legalProps);
+		System.out.println(legalProps.size());
+		
+		System.out.println("Old size of input propositions: " + this.inputPropositions.size());
+		System.out.println("New size of input propositions: " + factor.inputPropositions.size());
+		
+		factor.propNet = this.propNet;
+        factor.roles = this.roles;
+        
+        factor.savedState = null;
+        factor.basePropositions = this.basePropositions;
+        factor.goalPropositions = this.goalPropositions;
+        
+        factor.initProposition = this.initProposition;
+        factor.terminalProposition = this.terminalProposition;
+        
+        factor.ordering = this.ordering;
+		
+		return factor;
+	}
+	
+	private void stepBackToInputs(Component comp, Set<Proposition> visitedPropositions) {
+		if (comp instanceof Proposition && visitedPropositions.contains((Proposition) comp)) {
+			return;
+		} else if (comp instanceof Proposition) {
+			visitedPropositions.add((Proposition) comp);
+		}
+		
+		Set<Component> inputs;
+		if (comp instanceof Or) {
+			inputs = new HashSet<Component>(Arrays.asList(new Component[] { comp.getInputs().iterator().next() }));
+		} else {
+			inputs = comp.getInputs();
+		}
+		
+		for (Component inputComp : inputs) {
+			stepBackToInputs(inputComp, visitedPropositions);
+		}
+	}
+
+    private Map<GdlTerm, Proposition> filterInputs(Map<GdlTerm, Proposition> source, Set<Proposition> factorPropositions) {
+    	Map<GdlTerm, Proposition> retVal = new HashMap<GdlTerm, Proposition>();
+    	for (Proposition prop : factorPropositions) {
+    		if (source.containsKey(prop.getName())) {
+    			retVal.put(prop.getName(), prop);
+    		}
+    	}
+    	
+    	return retVal;
+    }
 }
