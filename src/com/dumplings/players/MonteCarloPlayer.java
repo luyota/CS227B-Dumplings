@@ -15,6 +15,7 @@ import apps.player.detail.DetailPanel;
 import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
+import com.dumplings.heuristics.MonteCarloDepthLimit;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**

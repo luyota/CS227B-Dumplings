@@ -168,9 +168,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				moves.add(getMoveFromProposition(p));
 			}
 		}
-		if (moves.size() == 0)
-			System.out.println("moves empty in state: " + state);
-		System.out.println("returning move");System.out.flush();
 		return moves;
 	}
 
