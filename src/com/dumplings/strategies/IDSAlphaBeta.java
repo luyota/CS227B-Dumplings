@@ -90,7 +90,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			Integer bestValue = abc.getBestValue();
 			if (abc.getBestMove() != null && 
 				((bestValue != null && bestValue > currentBestValue) ||
-				(abc.bestValue == null && currentBestValue <= 0))) { // <== condition triggered by currentBestValue = 0, below
+				(bestValue == null && currentBestValue <= 0))) { // <== condition triggered by currentBestValue = 0, below
 				
 				bestMove = abc.getBestMove();
 				if (bestValue != null)
@@ -98,7 +98,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				else {
 					//Prevent the move that leads to an unknown state from substituted 
 					//by the move that leads to a losing state.
-					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue?
+					currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue? 
+										  // answer: if it's originally < 0, it means that we at least have an unknown state, so set it to 0. 
+										  // If it's originally == 0, it can be originally either a losing move or an unknown state, and it's always better to use an unknown move. 
 				}
 			}
 
