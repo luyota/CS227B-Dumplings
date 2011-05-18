@@ -15,7 +15,6 @@ import apps.player.detail.DetailPanel;
 import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.MonteCarlo;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
@@ -28,13 +27,13 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
 		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
 		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
 		
 		//strategy = new IDSAlphaBeta(getStateMachine());
-		AbstractHeuristic heuristic = new MonteCarlo(getStateMachine());
-		((MonteCarlo)heuristic).setSampleSize(5);
+		AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
+		((MonteCarloDepthLimit)heuristic).setSampleSize(5);
+		((MonteCarloDepthLimit)heuristic).setMaxDepth(128);
 		strategy.setHeuristic(heuristic);
 	}
 	
@@ -44,11 +43,14 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		
 		System.out.println("Selecting move...");
-
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+		//System.out.println("Moves available: " + moves.size());
+		//for (Move m : moves)
+		//	System.out.println(m);
 		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();

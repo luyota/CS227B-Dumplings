@@ -28,6 +28,8 @@ public class HybridMobility extends AbstractHeuristic implements PlayerHeuristic
 
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		// Code review note by luyota: might have problems when returning goal value, especially 0. 
+		// The client code uses the sign of the number to evaluate whether it's a heuristic value, and 0 doesn't have sign.
 		// Our moves:
 		currentState = state;
 		List<Move> moves = getMoves(role);
@@ -46,8 +48,11 @@ public class HybridMobility extends AbstractHeuristic implements PlayerHeuristic
 					List<Move> opponentMoves = getMoves(gameRole);
 					if (opponentMoves != null)
 						avgOpponentMoves += opponentMoves.size();
-					else
+					else {
+						//System.out.println("Found a goal state while stepping ahead");
 						return stateMachine.getGoal(currentState, role);
+						
+					}
 				}
 			}
 			if (avgOpponentMoves > 0)

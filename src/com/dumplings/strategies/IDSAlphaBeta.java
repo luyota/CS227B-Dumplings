@@ -23,6 +23,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
 	private int initialDepth = 0;
+	private int hardMaxDepth = 128;
 	
 		
 	@Override
@@ -72,6 +73,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		Integer currentBestValue = Integer.MIN_VALUE;
 		
 		while (true) {
+			if (maxDepth > hardMaxDepth) break;
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
 			System.out.println(role.toString() + ": Current depth - " + maxDepth);
 			//System.out.println("Searching to max depth == " + maxDepth);
@@ -87,18 +89,28 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				abc.join(Math.max((timeout - System.currentTimeMillis() - 100), 0)); // wait until calculation thread finishes
 			} catch (InterruptedException e) {}
 
-			Integer bestValue = abc.getBestValue();
-			if (abc.getBestMove() != null && 
+			Integer newBestValue = abc.getBestValue();
+			Move newBestMove = abc.getBestMove();
+			if (!abc.stopExecution && newBestMove != null/* && 
 				((bestValue != null && bestValue > currentBestValue) ||
-				(abc.bestValue == null && currentBestValue <= 0))) { // <== condition triggered by currentBestValue = 0, below
+				(bestValue == null && currentBestValue <= 0))*/) { // <== condition triggered by currentBestValue = 0, below
 				
-				bestMove = abc.getBestMove();
-				if (bestValue != null)
-					currentBestValue = bestValue;
+				// This is not perfect because, when deeper search returns the move that has the same score as the previous depth,
+				// It might be the case that the move is different from the move in the previous depth. 
+				// However, it prevents always choosing the move with deeper depth, especially when the path leads to an infinite game playing.
+				
+				if (newBestValue != null && newBestValue != currentBestValue) {
+					System.out.println(role + " updated " + newBestValue + " " + currentBestValue);
+					currentBestValue = newBestValue;
+					bestMove = abc.getBestMove();
+				}
 				else {
+					
 					//Prevent the move that leads to an unknown state from substituted 
 					//by the move that leads to a losing state.
-					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue?
+					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue? 
+										  // answer: if it's originally < 0, it means that we at least have an unknown state, so set it to 0. 
+										  // If it's originally == 0, it can be originally either a losing move or an unknown state, and it's always better to use an unknown move. 
 				}
 			}
 
@@ -113,13 +125,14 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		
 		// Make sure bestMove is not null
 		if (bestMove == null) {
-			System.out.println(role.toString() + ": Didn't decide on any move. Playing first legal move.");
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
+			System.out.println(role.toString() + ": Didn't decide on any move. Playing randomly from " + moves.size() + " move.");
+			
 			Random generator = new Random();
 			bestMove = moves.get(generator.nextInt(moves.size()));			
 		}
 		timer.cancel();
-		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
+		System.out.println(role.toString() + ": Max Depth: " + maxDepth + "  Move: " + bestMove);		
 		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestValue);
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
 		System.out.println(role.toString() + ": # of entries in min/max/ext cache: " + minStateScores.size() + "/" + maxStateScores.size() + "/" + ((externalCache == null)?0:externalCache.size()));
