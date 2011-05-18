@@ -15,7 +15,6 @@ import com.dumplings.general.PlayerHeuristic;
 
 public class MonteCarlo extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
-	private Boolean stopExecution = false;
 	private int numSamples = 1;
 	
 	public MonteCarlo(StateMachine sm) {
