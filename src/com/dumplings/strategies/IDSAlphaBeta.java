@@ -22,6 +22,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
 	private int initialDepth = 0;
+	
 		
 	@Override
 	public void cleanup() {
@@ -50,6 +51,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		useCaching = flag;
 	}
 	public void setInitialDepth(int d) { this.initialDepth = d; }
+	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		long start = System.currentTimeMillis();
 		
@@ -81,7 +83,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			abc = new AlphaBetaComputer(state, role);
 			abc.start();			
 			try {				
-				abc.join(); // wait until calculation thread finishes
+				abc.join(Math.max((timeout - System.currentTimeMillis() - 100), 0)); // wait until calculation thread finishes
 			} catch (InterruptedException e) {}
 
 			Integer bestValue = abc.getBestValue();
@@ -120,6 +122,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		System.out.println(role.toString() + ": # of entries in min/max/ext cache: " + minStateScores.size() + "/" + maxStateScores.size() + "/" + ((externalCache == null)?0:externalCache.size()));
 		long stop = System.currentTimeMillis();
 		System.out.println(role.toString() + ": time spent in getBestMove - " + (stop - start));
+		
 		
 		return bestMove;
 	}

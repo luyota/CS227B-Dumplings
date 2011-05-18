@@ -33,7 +33,7 @@ public class HybridMobility extends AbstractHeuristic implements PlayerHeuristic
 		List<Move> moves = getMoves(role);
 		
 		if (stateMachine.isTerminal(currentState)) { // oh, hey, this is actually a goal state. yippee!
-			System.out.println("Found a goal state while stepping ahead");
+			//System.out.println("Found a goal state while stepping ahead");
 			return stateMachine.getGoal(currentState, role);
 		}
 		else {
