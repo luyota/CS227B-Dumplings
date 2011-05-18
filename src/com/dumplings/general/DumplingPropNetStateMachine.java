@@ -92,7 +92,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public boolean isTerminal(MachineState state) {
-		if (!savedState.equals(state))
+		if (!state.equals(savedState))
 			updateState(state, null);
 		// System.out.println("isTerminal: " + getStateFromBase());
 		return terminalProposition.getValue();
@@ -107,7 +107,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public int getGoal(MachineState state, Role role)
 			throws GoalDefinitionException {
-		if (!savedState.equals(state))
+		if (!state.equals(savedState))
 			updateState(state, null);
 
 		Integer goalValue = null;
@@ -159,7 +159,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
-		if (!savedState.equals(state))
+		if (!state.equals(savedState))
 			updateState(state, null);
 
 		List<Move> moves = new ArrayList<Move>();
