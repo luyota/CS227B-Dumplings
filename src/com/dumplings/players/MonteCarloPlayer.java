@@ -29,7 +29,10 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new IDSAlphaBeta(getStateMachine());
+		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
+		
+		//strategy = new IDSAlphaBeta(getStateMachine());
 		AbstractHeuristic heuristic = new MonteCarlo(getStateMachine());
 		((MonteCarlo)heuristic).setSampleSize(5);
 		strategy.setHeuristic(heuristic);

@@ -162,12 +162,15 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		if (!state.equals(savedState))
 			updateState(state, null);
 
-		List<Move> moves = new ArrayList<Move>();
+		List<Move> moves = new ArrayList<Move>();;
 		for (Proposition p : legalPropositions.get(role)) {
 			if (p.getValue()) {
 				moves.add(getMoveFromProposition(p));
 			}
 		}
+		if (moves.size() == 0)
+			System.out.println("moves empty in state: " + state);
+		System.out.println("returning move");System.out.flush();
 		return moves;
 	}
 
