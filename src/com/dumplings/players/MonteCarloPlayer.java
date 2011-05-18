@@ -45,11 +45,14 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		
 		System.out.println("Selecting move...");
-
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+		//System.out.println("Moves available: " + moves.size());
+		//for (Move m : moves)
+		//	System.out.println(m);
 		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();

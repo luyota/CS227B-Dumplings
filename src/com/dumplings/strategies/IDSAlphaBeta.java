@@ -23,6 +23,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
 	private int initialDepth = 0;
+	private int hardMaxDepth = 128;
 	
 		
 	@Override
@@ -72,6 +73,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		Integer currentBestValue = Integer.MIN_VALUE;
 		
 		while (true) {
+			if (maxDepth > hardMaxDepth) break;
 			// maxDepth will be very big when it's a no-op or after reaching the real max depth of the search tree.
 			System.out.println(role.toString() + ": Current depth - " + maxDepth);
 			//System.out.println("Searching to max depth == " + maxDepth);
@@ -98,7 +100,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				// However, it prevents always choosing the move with deeper depth, especially when the path leads to an infinite game playing.
 				
 				if (newBestValue != null && newBestValue != currentBestValue) {
-					System.out.println("Updated " + newBestValue + " " + currentBestValue);
+					System.out.println(role + " updated " + newBestValue + " " + currentBestValue);
 					currentBestValue = newBestValue;
 					bestMove = abc.getBestMove();
 				}
@@ -130,7 +132,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			bestMove = moves.get(generator.nextInt(moves.size()));			
 		}
 		timer.cancel();
-		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
+		System.out.println(role.toString() + ": Max Depth: " + maxDepth + "  Move: " + bestMove);		
 		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestValue);
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
 		System.out.println(role.toString() + ": # of entries in min/max/ext cache: " + minStateScores.size() + "/" + maxStateScores.size() + "/" + ((externalCache == null)?0:externalCache.size()));
