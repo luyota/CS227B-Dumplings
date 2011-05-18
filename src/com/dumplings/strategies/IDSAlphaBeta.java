@@ -3,6 +3,7 @@ package com.dumplings.strategies;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -113,7 +114,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 		// Make sure bestMove is not null
 		if (bestMove == null) {
 			System.out.println(role.toString() + ": Didn't decide on any move. Playing first legal move.");
-			bestMove = stateMachine.getLegalMoves(state, role).get(0);
+			List<Move> moves = stateMachine.getLegalMoves(state, role);
+			Random generator = new Random();
+			bestMove = moves.get(generator.nextInt(moves.size()));			
 		}
 		timer.cancel();
 		System.out.println(role.toString() + ": Max Depth: " + maxDepth);		
