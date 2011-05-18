@@ -59,9 +59,9 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 		
 		
 		long start = System.currentTimeMillis();
-		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
+		//metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
 		long end = System.currentTimeMillis();		
-		System.out.println("Complete search spent " + (start - end));
+		//System.out.println("Complete search spent " + (start - end));
 		
 		strategy.setExternalCache(((MiniMax)metaStrategy).maxStateScores);
 		strategy.setHeuristic(new HybridMobility(getStateMachine()));
