@@ -135,7 +135,6 @@ public abstract class PlayerStrategy {
 							currentState = stateMachine.getNextState(currentState, moves);	
 						}
 						
-						System.out.println("Finished match");
 						// Store score of this match
 						if (stateMachine.isTerminal(currentState)) {
 							int score = stateMachine.getGoal(currentState, role);
