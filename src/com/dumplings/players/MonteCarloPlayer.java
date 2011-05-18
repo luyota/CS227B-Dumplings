@@ -16,6 +16,7 @@ import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarlo;
+import com.dumplings.heuristics.MonteCarloDepthLimit;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
@@ -28,10 +29,13 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		//strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		strategy = new IDSAlphaBeta(getStateMachine());
-		AbstractHeuristic heuristic = new MonteCarlo(getStateMachine());
-		((MonteCarlo)heuristic).setSampleSize(5);
+		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
+		
+		//strategy = new IDSAlphaBeta(getStateMachine());
+		AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
+		((MonteCarloDepthLimit)heuristic).setSampleSize(5);
+		((MonteCarloDepthLimit)heuristic).setMaxDepth(128);
 		strategy.setHeuristic(heuristic);
 	}
 	

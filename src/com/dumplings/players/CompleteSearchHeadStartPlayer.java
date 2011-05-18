@@ -14,6 +14,7 @@ import apps.player.detail.DetailPanel;
 
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
+import com.dumplings.heuristics.HybridMobility;
 import com.dumplings.strategies.IDSAlphaBeta;
 import com.dumplings.strategies.MiniMax;
 
@@ -37,7 +38,7 @@ public final class CompleteSearchHeadStartPlayer extends StateMachineGamer
 		//System.out.println("Complete search spent " + (start - end));
 		
 		strategy.setExternalCache(((MiniMax)metaStrategy).maxStateScores);
-		//strategy.setHeuristic(new HybridMobility(getStateMachine()));
+		strategy.setHeuristic(new HybridMobility(getStateMachine()));
 		
 	}
 	
