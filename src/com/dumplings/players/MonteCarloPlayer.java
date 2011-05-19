@@ -36,7 +36,7 @@ public final class MonteCarloPlayer extends StateMachineGamer
 		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
 		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
-		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(128);
+		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
 	}
 	

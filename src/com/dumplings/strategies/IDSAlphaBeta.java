@@ -22,7 +22,7 @@ import com.dumplings.utils.Canonicalizer;
 public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
-	private int initialDepth = 0;
+	private int initialDepth = 1;
 	private int hardMaxDepth = 128;
 	
 		
@@ -91,9 +91,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 			Integer newBestValue = abc.getBestValue();
 			Move newBestMove = abc.getBestMove();
-			if (!abc.stopExecution && newBestMove != null/* && 
-				((bestValue != null && bestValue > currentBestValue) ||
-				(bestValue == null && currentBestValue <= 0))*/) { // <== condition triggered by currentBestValue = 0, below
+			if (maxDepth == 1 || (!abc.stopExecution && newBestMove != null)) { // <== condition triggered by currentBestValue = 0, below
 				
 				// This is not perfect because, when deeper search returns the move that has the same score as the previous depth,
 				// It might be the case that the move is different from the move in the previous depth. 
@@ -103,15 +101,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					System.out.println(role + ": updated to " + newBestValue + " from " + currentBestValue);
 					currentBestValue = newBestValue;
 					bestMove = abc.getBestMove();
-				}
-				else {
-					
-					//Prevent the move that leads to an unknown state from substituted 
-					//by the move that leads to a losing state.
-					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue? 
-										  // answer: if it's originally < 0, it means that we at least have an unknown state, so set it to 0. 
-										  // If it's originally == 0, it can be originally either a losing move or an unknown state, and it's always better to use an unknown move. 
-				}
+				}				
 			}
 
 			if (currentBestValue == 100)

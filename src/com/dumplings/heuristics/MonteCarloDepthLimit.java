@@ -31,9 +31,10 @@ public class MonteCarloDepthLimit extends AbstractHeuristic implements PlayerHeu
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		Integer score = null;
 		int numUsefulSamples = 0;
-		for (int i = 0; i < numSamples; i++) {
+		//System.out.println("heuristic used");
+		for (int i = 0; i < numSamples; i++) {			
 			MachineState currentState = state;
-			for (int j = 0; j < maxDepth && !stateMachine.isTerminal(currentState); j ++) {
+			for (int j = 0; j < maxDepth && !stateMachine.isTerminal(currentState); j ++) {				
 				if (stopExecution) {
 					return score == null ? null : score / i;
 				}
@@ -54,6 +55,7 @@ public class MonteCarloDepthLimit extends AbstractHeuristic implements PlayerHeu
 		
 		if (score == null) 
 			return score;
+		//System.out.println("Reaches the end");
 		score = score / numUsefulSamples;
 		// never ever override forced wins or losses
 		if (score == 0)
