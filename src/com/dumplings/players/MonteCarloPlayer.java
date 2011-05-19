@@ -16,6 +16,7 @@ import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarloDepthLimit;
+import com.dumplings.heuristics.MonteCarloDepthLimitMemory;
 import com.dumplings.strategies.IDSAlphaBeta;
 
 /**
@@ -32,9 +33,10 @@ public final class MonteCarloPlayer extends StateMachineGamer
 		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
 		
 		//strategy = new IDSAlphaBeta(getStateMachine());
-		AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
-		((MonteCarloDepthLimit)heuristic).setSampleSize(5);
-		((MonteCarloDepthLimit)heuristic).setMaxDepth(128);
+		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
+		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
+		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
+		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(128);
 		strategy.setHeuristic(heuristic);
 	}
 	
