@@ -3,6 +3,7 @@ package com.dumplings.general;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -56,6 +57,110 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private Proposition terminalProposition = null;
 	private Map<Role, Set<Proposition>> legalPropositions = null;
 	private Map<Role, Set<Proposition>> goalPropositions = null;
+	
+	public boolean isInhibiting(Proposition p, Proposition q) {
+		// TODO: check whether p inhibits q
+		// Problem: enumerate all possible states? Seems inefficient.
+		
+		return false;
+	}
+	
+	public List<Proposition> getLatches() {
+		List<Proposition> propositions = new ArrayList<Proposition>(
+				propNet.getPropositions());
+		List<Proposition> latches = new ArrayList<Proposition>();
+		
+		for (Proposition p : propositions) {
+			try {
+				if (isLatch(p))
+					latches.add(p);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return latches;
+	}
+
+	public boolean isLatch(Proposition p) throws MoveDefinitionException, TransitionDefinitionException {
+		Set<Proposition> determinants = getDeterminants(p);
+		
+		// Enumerate all possible values for determinants
+		// In each case, check whether "p true => p true in next states" holds			
+		List<Boolean[]> combinations = getCombinations(determinants.size());
+		for (Boolean[] b : combinations) {
+			// Set the propositions to the corresponding truth values
+			int i = 0;
+			for (Proposition pp : determinants) {
+				pp.setValue(b[i]);
+				i++;
+			}
+			
+			// Propagate the values
+			for (Proposition pp : ordering) {
+				if (pp.getInputs().size() == 1) {
+					pp.setValue(pp.getSingleInput().getValue());
+				}
+			}
+			
+			// Check whether p is true
+			if (p.getValue()) {
+				// Check if p is true in all next states
+				for (MachineState state : getNextStates(getStateFromBase())) {
+					updateState(state, null);
+					if (!p.getValue())
+						return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	/*
+	 * Given an integer n, this computes the power set of a set of length n
+	 * It returns a list of boolean arrays of length n
+	 */
+	private List<Boolean[]> getCombinations(int n) {
+		List<Boolean[]> list = new ArrayList<Boolean[]>();
+		int size = (int) Math.pow(2, n);
+		
+		// Populate the power set
+		for (int i = 0; i < size; i++) {
+			Boolean[] b = new  Boolean[n];
+			// Fill this entry of size n
+			for (int j = 0; j < n; j++) {
+				// Check whether j-th bit is true or false
+				if ((i & (1 << j)) > 0)
+					b[j] = true;
+				else
+					b[j] = false;
+			}
+			list.add(b);
+		}
+		return list;
+	}
+	
+	/*
+	 * Finds input and base propositions that determine p
+	 */
+	private Set<Proposition> getDeterminants(Component p) {
+		Set<Proposition> determinants = new HashSet<Proposition>();
+		
+		Set<Component> inputs = p.getInputs();
+		for (Component c : inputs) {
+			if (c instanceof Proposition) {
+				if (inputPropositions.containsValue(c))
+					determinants.add((Proposition) c);
+				else if (basePropositions.containsValue(c))
+					determinants.add((Proposition) c);
+			}
+			else {
+				determinants.addAll(getDeterminants(c));
+			}
+		}
+		
+		return determinants;
+	}
 
 	/**
 	 * Initializes the PropNetStateMachine. You should compute the topological

@@ -5,6 +5,7 @@ import java.util.List;
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
+import util.propnet.architecture.components.Proposition;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
@@ -28,6 +29,11 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		System.out.println("Finding latches");
+		for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
+			System.out.println(p);
+		System.out.println("Done");
+		
 		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
 		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
 		
