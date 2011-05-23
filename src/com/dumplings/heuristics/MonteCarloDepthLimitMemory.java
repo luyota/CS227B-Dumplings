@@ -1,6 +1,9 @@
 package com.dumplings.heuristics;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -12,34 +15,53 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 
 import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.PlayerHeuristic;
+import com.dumplings.utils.Canonicalizer;
 
-public class MonteCarloDepthLimit extends AbstractHeuristic implements PlayerHeuristic {
+public class MonteCarloDepthLimitMemory extends AbstractHeuristic implements PlayerHeuristic {
 	private StateMachine stateMachine;
 	private int numSamples = 1;
 	private int maxDepth = Integer.MAX_VALUE;
+	private Set<String> stateMoveCache = new HashSet<String>();
 	
-	public MonteCarloDepthLimit(StateMachine sm) {
+	public MonteCarloDepthLimitMemory(StateMachine sm) {
 		stateMachine = sm;
 	}
 	
 	public void setSampleSize(int size) {
 		numSamples = size;
 	}
-	public void setMaxDepth(int depth) { this.maxDepth = depth; }
+	public void setMaxDepth(int depth) {
+		this.maxDepth = depth;
+	}
+	public void cleanup() {
+		this.stateMoveCache.clear();
+	}
 	
 	@Override
 	public Integer getScore(MachineState state, Role role) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		Integer score = null;
 		int numUsefulSamples = 0;
-		//System.out.println("heuristic used");
-		for (int i = 0; i < numSamples; i++) {			
+		Random randGen = new Random();
+		for (int i = 0; i < numSamples; i++) {
 			MachineState currentState = state;
-			for (int j = 0; j < maxDepth && !stateMachine.isTerminal(currentState); j ++) {				
+			for (int j = 0; (maxDepth < 0 || j < maxDepth) && !stateMachine.isTerminal(currentState); j ++) {
 				if (stopExecution) {
 					return score == null ? null : score / i;
 				}
-				List<Move> randomMoves = stateMachine.getRandomJointMove(currentState);
-				currentState = stateMachine.getNextState(currentState, randomMoves);
+				List<List<Move>> allMoves = stateMachine.getLegalJointMoves(currentState);
+				List<Move> randomMoves = null;
+				for (int mi = 0; mi < allMoves.size(); mi++) {
+					randomMoves = allMoves.get(randGen.nextInt(allMoves.size()));
+					String stateMovesString = Canonicalizer.stateMovesString(state, randomMoves);
+					if (!this.stateMoveCache.contains(stateMovesString)) {
+						this.stateMoveCache.add(stateMovesString);
+						break;
+					}
+				}
+				if (randomMoves != null)
+					currentState = stateMachine.getNextState(currentState, randomMoves);
+				else
+					return score == null ? null : score / i;
 			}
 			// If it gets to the end before max depth
 			if (stateMachine.isTerminal(currentState)) {
@@ -55,7 +77,6 @@ public class MonteCarloDepthLimit extends AbstractHeuristic implements PlayerHeu
 		
 		if (score == null) 
 			return score;
-		//System.out.println("Reaches the end");
 		score = score / numUsefulSamples;
 		// never ever override forced wins or losses
 		if (score == 0)

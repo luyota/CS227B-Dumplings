@@ -22,7 +22,7 @@ import com.dumplings.utils.Canonicalizer;
 public class IDSAlphaBeta extends PlayerStrategy {
 	private Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
-	private int initialDepth = 0;
+	private int initialDepth = 1;
 	private int hardMaxDepth = 128;
 	
 		
@@ -91,42 +91,35 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 			Integer newBestValue = abc.getBestValue();
 			Move newBestMove = abc.getBestMove();
-			if (!abc.stopExecution && newBestMove != null/* && 
-				((bestValue != null && bestValue > currentBestValue) ||
-				(bestValue == null && currentBestValue <= 0))*/) { // <== condition triggered by currentBestValue = 0, below
+			if (maxDepth == 1 || (!abc.stopExecution && newBestMove != null)) { // <== condition triggered by currentBestValue = 0, below
 				
 				// This is not perfect because, when deeper search returns the move that has the same score as the previous depth,
 				// It might be the case that the move is different from the move in the previous depth. 
 				// However, it prevents always choosing the move with deeper depth, especially when the path leads to an infinite game playing.
 				
 				if (newBestValue != null && newBestValue != currentBestValue) {
-					System.out.println(role + " updated " + newBestValue + " " + currentBestValue);
+					System.out.println(role + ": updated to " + newBestValue + " from " + currentBestValue);
 					currentBestValue = newBestValue;
 					bestMove = abc.getBestMove();
-				}
-				else {
-					
-					//Prevent the move that leads to an unknown state from substituted 
-					//by the move that leads to a losing state.
-					//currentBestValue = 0; // <== don't currentBestValue be <= 0 anyway if we're ever in here with a null bestValue? 
-										  // answer: if it's originally < 0, it means that we at least have an unknown state, so set it to 0. 
-										  // If it's originally == 0, it can be originally either a losing move or an unknown state, and it's always better to use an unknown move. 
-				}
+				}				
 			}
 
+			if (currentBestValue == 100)
+				break;
 			if (abc.stopExecution)
 				break;
 			if (abc.isSearchComplete) {
 				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
+			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestValue);
 			maxDepth++;
 		}
 		
 		// Make sure bestMove is not null
 		if (bestMove == null) {
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
-			System.out.println(role.toString() + ": Didn't decide on any move. Playing randomly from " + moves.size() + " move.");
+			System.out.println(role.toString() + ": Didn't decide on any move. Playing randomly from " + moves.size() + " move(s).");
 			
 			Random generator = new Random();
 			bestMove = moves.get(generator.nextInt(moves.size()));			
@@ -177,8 +170,9 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 		public void getBestMove(MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException { 		
 			stopExecution = false;
-			if (heuristic != null)
+			if (heuristic != null) {
 				heuristic.reset();
+			}
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
 
 			bestMove = null;
@@ -192,6 +186,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 					isSearchComplete = false;
 					break;
 				}
+				if (heuristic != null)
+					heuristic.cleanup();
 
 				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 				if (testValue != null) {
@@ -209,7 +205,6 @@ public class IDSAlphaBeta extends PlayerStrategy {
 						nullMove = move;
 				}
 			}
-
 
 			if (bestValue <= 0 && nullMove != null) {
 				bestValue = null;
@@ -294,6 +289,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			numStatesExpanded++;
 			int bestValue = Integer.MIN_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
+			List<Move> moves = stateMachine.getLegalMoves(state, role);
 			if (depth > maxDepth) {
 				// only apply heuristics when we've alpha-beta-ed as deep as we're going to go
 				// so heuristics don't slow us down as we're IDS-ing
@@ -301,7 +297,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 				// this is as far as we go, so calculate heuristic and be done w/ it
 				heuristicUsed = true;
-				if (heuristic != null) {
+				if (heuristic != null && moves.size() > 1) {
 					Integer value = heuristic.getScore(state, role);
 					if (value != null)
 						return -value; // return heuristic scores as negative to differentiate for caching purposes
@@ -314,7 +310,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				}
 			} 
 			else {
-				for (Move move : stateMachine.getLegalMoves(state, role)) {
+				for (Move move : moves) {
 					if (stopExecution) {
 						break;
 					}
