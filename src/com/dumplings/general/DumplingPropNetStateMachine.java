@@ -3,6 +3,7 @@ package com.dumplings.general;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -505,7 +506,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		return new PropNetMachineState(contents);
 	}
 	
-	public Set<DumplingPropNetStateMachine> propNetFactors() {
+	public Collection<DumplingPropNetStateMachine> propNetFactors() {
 		Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
 		Set<String> factoredPropositionTerms = new HashSet<String>();
 		
@@ -518,10 +519,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		for (Set<Proposition> goalSet : this.goalPropositions.values()) {
 			for (Proposition goalProposition : goalSet) {
 				Set<Proposition> tailPropositions = new HashSet<Proposition>();
-				Or disjunction = findDisjunction(goalProposition, tailPropositions);
-				
 				Set<Component> goalComponents = new HashSet<Component>();
+				
+				// search for a disjunction...
+				Or disjunction = findDisjunction(goalProposition, tailPropositions);
 				if (disjunction != null) {
+					// collect 'new' goal components -- i.e. those leading into a disjunction
+					factoredPropositionTerms.clear();
 					for (Component disjunctionInput : disjunction.getInputs()) {
 						if (disjunctionInput instanceof Proposition) {
 							String termString = ((Proposition)disjunctionInput).getName().toString();
@@ -533,9 +537,11 @@ public class DumplingPropNetStateMachine extends StateMachine {
 							goalComponents.add(disjunctionInput);
 						}
 					}
-				} else {
-					factoredPropositionTerms.add(goalProposition.getName().toString());
-					goalComponents.add(goalProposition);
+				}
+				
+				if (goalComponents.size() == 0) {
+					// no luck -- on to the next one.
+					continue;
 				}
 				
 				for (Component goalComponent : goalComponents) {
@@ -575,25 +581,56 @@ public class DumplingPropNetStateMachine extends StateMachine {
 					factor.terminalProposition = this.terminalProposition;
 			
 					factor.ordering = this.ordering;
-			
-					System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size() + " for goal: " + goalComponent);
-					for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
-						System.out.println("\t" + inputTerm);
-					}
-					/*
-					for (Set<Proposition> legalSet : factor.legalPropositions.values()) {
-						for (Proposition legal : legalSet) {
-							System.out.println("\t" + legal.getName());
-						}
-					}
-					*/
 		
 					factors.add(factor);
 				}
 			}
 		}
 		
-		return factors;
+		// ok...now combine factors where possible
+		Map<Set<Move>, DumplingPropNetStateMachine> allFactorMoves = new HashMap<Set<Move>, DumplingPropNetStateMachine>();
+		for (DumplingPropNetStateMachine factor : factors) {
+			Set<Move> factorMoves = new HashSet<Move>();
+			for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
+				factorMoves.add(new Move(((GdlFunction)inputTerm).get(1).toSentence()));
+			}
+			boolean contained = false;
+			for (Entry<Set<Move>, DumplingPropNetStateMachine> factorMovesEntry : allFactorMoves.entrySet()) {
+				if (factorMoves.equals(factorMovesEntry.getKey())) {
+					DumplingPropNetStateMachine otherFactor = factorMovesEntry.getValue();
+					otherFactor.inputPropositions.putAll(factor.inputPropositions);
+					for (Entry<Role, Set<Proposition>> legalEntry : factor.legalPropositions.entrySet()) {
+						Set<Proposition> roleProps = otherFactor.legalPropositions.get(legalEntry.getKey());
+						if (roleProps == null) {
+							roleProps = new HashSet<Proposition>();
+							otherFactor.legalPropositions.put(legalEntry.getKey(), roleProps);
+						}
+						roleProps.addAll(legalEntry.getValue());
+					}
+					contained = true;
+				}
+			}
+			if (!contained)
+				allFactorMoves.put(factorMoves, factor);
+		}
+			
+		for (DumplingPropNetStateMachine factor : allFactorMoves.values()) {
+			System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size());
+			
+			/*
+			// all the details...
+			for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
+				System.out.println("\t" + inputTerm);
+			}
+			for (Set<Proposition> legalSet : factor.legalPropositions.values()) {
+				for (Proposition legal : legalSet) {
+					System.out.println("\t" + legal.getName());
+				}
+			}
+			*/
+		}
+		
+		return allFactorMoves.values();
 	}
 	
 	private Or findDisjunction(Component comp, Set<Proposition> tailPropositions) {
