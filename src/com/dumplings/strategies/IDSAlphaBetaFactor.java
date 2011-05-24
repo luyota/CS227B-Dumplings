@@ -71,8 +71,6 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		super.cleanup();
 	}
 	
-	
-	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		long start = System.currentTimeMillis();		
 				
@@ -308,7 +306,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				}
 			}
 			
-			//System.out.println(role + ": factor searched " + result.value + " move " + result.move);
+			System.out.println(role + ": factor searched " + result.value + " move " + result.move);
 			bestResults.put(factor, result);	
 		}
 
