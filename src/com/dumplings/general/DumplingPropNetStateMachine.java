@@ -509,6 +509,12 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
 		Set<String> factoredPropositionTerms = new HashSet<String>();
 		
+		Map<GdlTerm, Proposition> universalInputs = new HashMap<GdlTerm, Proposition>();
+		for (Proposition input : this.inputPropositions.values()) {
+			if (input.getOutputs().size() == 0)
+				universalInputs.put(input.getName(), input);
+		}
+		
 		for (Set<Proposition> goalSet : this.goalPropositions.values()) {
 			for (Proposition goalProposition : goalSet) {
 				Set<Proposition> tailPropositions = new HashSet<Proposition>();
@@ -544,6 +550,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 					DumplingPropNetStateMachine factor = new DumplingPropNetStateMachine();
 								
 					factor.inputPropositions = inputs;
+					factor.inputPropositions.putAll(universalInputs);
 			
 					factor.legalPropositions = new HashMap<Role, Set<Proposition>>();
 					for (Proposition input : inputs.values()) {
