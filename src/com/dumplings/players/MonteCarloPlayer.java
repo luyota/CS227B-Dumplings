@@ -16,7 +16,6 @@ import apps.player.detail.DetailPanel;
 import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.MonteCarloDepthLimit;
 import com.dumplings.heuristics.MonteCarloDepthLimitMemory;
 import com.dumplings.strategies.IDSAlphaBeta;
 
@@ -37,6 +36,8 @@ public final class MonteCarloPlayer extends StateMachineGamer
 		
 		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
 		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
+		
+		((DumplingPropNetStateMachine)getStateMachine()).propNetFactors();
 		
 		//strategy = new IDSAlphaBeta(getStateMachine());
 		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
