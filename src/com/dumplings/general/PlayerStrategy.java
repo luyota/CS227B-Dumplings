@@ -23,7 +23,7 @@ public abstract class PlayerStrategy {
 	protected AbstractHeuristic heuristic;
 	public MetaGamer metaGamer = new MetaGamer();
 	protected Map<String, Integer> externalCache;
-	
+		
 	public PlayerStrategy(StateMachine sm) {
 		this.stateMachine = sm;
 	}
