@@ -32,10 +32,10 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		System.out.println("Finding latches");
-		for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
-			System.out.println(p);
-		System.out.println("Done");
+		//System.out.println("Finding latches");
+		//for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
+		//	System.out.println(p);
+		//System.out.println("Done");
 		
 		//DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
 		Set<DumplingPropNetStateMachine> factors = 
@@ -56,6 +56,7 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
+		
 	}
 	
 	/**

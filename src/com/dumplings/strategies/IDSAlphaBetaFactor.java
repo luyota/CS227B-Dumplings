@@ -17,6 +17,7 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
@@ -91,7 +92,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		Result currentBestResult = new Result(null, Integer.MIN_VALUE);
 		
 		// Used to cache previous results.
-		HashMap<DumplingPropNetStateMachine, Result> prevBestResults = null; 
+		//HashMap<DumplingPropNetStateMachine, Result> prevBestResults = null; 
 		
 		while (true) {
 			if (maxDepth > hardMaxDepth) break;
@@ -104,74 +105,55 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				abc.join(Math.max((timeout - System.currentTimeMillis() - 100), 0)); // wait until calculation thread finishes
 			} catch (InterruptedException e) {}
 						
-			DumplingPropNetStateMachine forceDeathFactor = null;
+			//DumplingPropNetStateMachine forceDeathFactor = null;
 			boolean isFirst = true;
-			HashMap<DumplingPropNetStateMachine, Result> newBestResults = abc.getBestResults();
-			HashMap<DumplingPropNetStateMachine, Integer> newWorstValues = abc.getWorstValues();
+			HashMap<DumplingPropNetStateMachine, Result> newBestResults = abc.getBestResults();			
 			Result newBestResult = null;
 			
-			// We have to look to see if there's a force death in this level
-			for (DumplingPropNetStateMachine factor : newWorstValues.keySet()) {
-				if (newWorstValues.get(factor) != null && newWorstValues.get(factor) == 0) {
-					forceDeathFactor = factor;
-					break;
-				}
-			}			
-			
-			if (forceDeathFactor == null) {
-				// We find the best result among all the factors							
-				for (DumplingPropNetStateMachine factor : newBestResults.keySet()) {				
-					Result result = newBestResults.get(factor);				
-					if (isFirst) {
-						newBestResult = result;
-					} else {
-						if ((result.value != null && newBestResult.value != null && newBestResult.value > result.value) ||
+			// We find the best result among all the factors							
+			for (DumplingPropNetStateMachine factor : newBestResults.keySet()) {				
+				Result result = newBestResults.get(factor);
+				//System.out.println(result.value);
+				
+				if (isFirst) {
+					newBestResult = result;
+				} else {
+					if ((result.value != null && newBestResult.value != null && newBestResult.value < result.value) ||
 							(result.value != null && newBestResult.value == null)) {
-							newBestResult = result;
-						}
+						//System.out.println("hhh");
+						newBestResult = result;
 					}
-					isFirst = false;				
 				}
-				if (newBestResult != null) {					
-					if (maxDepth == 1 || (!abc.stopExecution && newBestResult.move != null)) {					
-						// This is not perfect because, when deeper search returns the move that has the same score as the previous depth,
-						// It might be the case that the move is different from the move in the previous depth. 
-						// However, it prevents always choosing the move with deeper depth, especially when the path leads to an infinite game playing.
-						
-						if (newBestResult.value != null && newBestResult.value != currentBestResult.value) {
-							System.out.println(role + ": updated to " + newBestResult.value + " from " + currentBestResult.value);
-							currentBestResult.value = newBestResult.value;
-							currentBestResult.move = newBestResult.move;
-						}									
-					}
-				} else {
-					// This shouldn't happen since newBestResult is as least assigned with the first factor's result.
-					System.out.println("Something bad happens...");
+				isFirst = false;				
+			}
+			//System.out.println("new best result: " + newBestResult.value);
+			if (newBestResult != null) {					
+				if (maxDepth == 1 || (!abc.stopExecution && newBestResult.move != null)) {					
+					// This is not perfect because, when deeper search returns the move that has the same score as the previous depth,
+					// It might be the case that the move is different from the move in the previous depth. 
+					// However, it prevents always choosing the move with deeper depth, especially when the path leads to an infinite game playing.
+
+					if (newBestResult.value != null && newBestResult.value != currentBestResult.value) {
+						System.out.println(role + ": updated to " + newBestResult.value + " from " + currentBestResult.value);
+						currentBestResult.value = newBestResult.value;
+						currentBestResult.move = newBestResult.move;
+					}									
 				}
-				if (currentBestResult.value == 100)
-					break;
-				if (abc.stopExecution)
-					break;
-				if (abc.isSearchComplete) {
-					System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
-					break;
-				}
-				System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestResult.value);
-				prevBestResults = newBestResults;
 			} else {
-				// Pick the move from this factor that doesn't result in force death				
-				// No need to find a shallower force win because if there exists any then it will be picked before going to 
-				// the next level.
-				if (prevBestResults != null) {
-					Result result = prevBestResults.get(forceDeathFactor);
-					currentBestResult.move = result.move;
-					currentBestResult.value = result.value;							
-				} else {
-					// It's dead anyway...lol
-					currentBestResult.move = null;
-				}
+				// This shouldn't happen since newBestResult is as least assigned with the first factor's result.
+				System.out.println("Something bad happens...");
+			}
+			if (currentBestResult.value == 100)
+				break;
+			if (abc.stopExecution)
+				break;
+			if (abc.isSearchComplete) {
+				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
+			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestResult.value);
+			//prevBestResults = newBestResults;
+
 			maxDepth++;
 		}
 		
@@ -202,11 +184,12 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		//This data structure stores the best results of each factor
 		private HashMap<DumplingPropNetStateMachine, Result> bestResults = new HashMap<DumplingPropNetStateMachine, Result>();
 		// This is used to track the force death moves
-		private HashMap<DumplingPropNetStateMachine, Integer> worstValues = new HashMap<DumplingPropNetStateMachine, Integer>();
+		//private HashMap<DumplingPropNetStateMachine, Integer> worstValues = new HashMap<DumplingPropNetStateMachine, Integer>();
 		private boolean stopExecution = false;
 		private boolean isSearchComplete = true;
 		private Set<DumplingPropNetStateMachine> effectiveFactors = new HashSet<DumplingPropNetStateMachine>();
 		private DumplingPropNetStateMachine currentFactor;
+		private boolean isDeathSearch = false;
 
 		public AlphaBetaComputer(MachineState state, Role role) {
 			this.state = state;
@@ -222,7 +205,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			}
 		}
 		public HashMap<DumplingPropNetStateMachine, Result> getBestResults() {	return bestResults; }		
-		public HashMap<DumplingPropNetStateMachine, Integer> getWorstValues() { return worstValues; }
+		//public HashMap<DumplingPropNetStateMachine, Integer> getWorstValues() { return worstValues; }
 
 		public void run() {
 			try {
@@ -242,68 +225,96 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				heuristic.reset();
 			}
 			
-			//The first move that results in an unknown state
-			Move nullMove = null;
-			numStatesExpanded = 1;
+			DumplingPropNetStateMachine deathFactor = null;
 			
-			for (DumplingPropNetStateMachine factor : effectiveFactors) {				
-				currentFactor = factor;
-				heuristic.setStateMachine(factor);
+			//We don't need heuristic when looking for force death
+			AbstractHeuristic tempHeuristic = heuristic;
+			heuristic = null;			
+			
+			for (DumplingPropNetStateMachine factor : effectiveFactors) {
 				
-				Result result = new Result(null, Integer.MIN_VALUE);
-				List<Move> moves = factor.getLegalMoves(state, role);
-				for (Move move : moves) {
+				// Look for the force death in other factors to see if this one results in a force death
+				// We pick up whatever joint move because the legal move in a factor won't affect other factors (in theory)
+				List<Move> jointMove = factor.getRandomJointMove(state);
+				MachineState nextState = stateMachine.getNextState(state, jointMove);
+				
+				
+				Set<DumplingPropNetStateMachine> visited = new HashSet<DumplingPropNetStateMachine>();
+				for (DumplingPropNetStateMachine anotherFactor : effectiveFactors) {
+					if (!visited.contains(anotherFactor) && anotherFactor != factor) {
+						currentFactor = anotherFactor;				
+						// We've stepped ahead one step, so depth starts at 1 						
+						Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
+						
+						visited.add(anotherFactor);
+						if (testValue != null && testValue == 0) {
+							deathFactor = anotherFactor; 
+							break;
+						}
+					}
+				}			
+			}
+			
+			heuristic = tempHeuristic;
+			if (deathFactor != null) {
+				System.out.println(role + ": death factor found... only search in that factor.");
+				searchFactor(deathFactor, state, role);
+				System.out.println(role + ": Best factor size " + bestResults.size());
+			}
+			else { 
+				for (DumplingPropNetStateMachine factor : effectiveFactors) {			
+					searchFactor(factor, state, role);
 					if (stopExecution) {
 						isSearchComplete = false;
 						break;
 					}
-					if (heuristic != null)
-						heuristic.cleanup();
-					
-
-					Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
-					// If not heuristic
-					if (testValue != null) {						
-						if (testValue < 0)
-							isSearchComplete = false;
-						// value could be negative if heuristic was used, so use absolute value
+				}
+			}
+		}
+		private void searchFactor(DumplingPropNetStateMachine factor, MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+			//The first move that results in an unknown state
+			
+			numStatesExpanded = 1;
 						
-						int value = Math.abs(testValue);
-						//System.out.println(role + ": value returned " + value);
-						if (value > result.value) {
-							result.value = value;
-							result.move = move;
-						}
-					} else {
+			currentFactor = factor;
+			if (heuristic != null)
+				heuristic.setStateMachine(factor);
+			
+			Result result = new Result(null, Integer.MIN_VALUE);
+			List<Move> moves = factor.getLegalMoves(state, role);
+			for (Move move : moves) {
+				if (stopExecution) {
+					isSearchComplete = false;
+					break;
+				}
+				if (heuristic != null)
+					heuristic.cleanup();
+				
+				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+				// If not heuristic
+				if (testValue != null) {						
+					if (testValue < 0)
 						isSearchComplete = false;
-						if (nullMove == null)
-							nullMove = move;
+					// value could be negative if heuristic was used, so use absolute value
+					
+					int value = Math.abs(testValue);
+					//System.out.println(role + ": value returned " + value);
+					if (value > result.value) {
+						result.value = value;
+						result.move = move;
 					}
-				}
-
-				if (result.value <= 0 && nullMove != null) {
-					result.value = null;
-					result.move = nullMove;
-				}
-				bestResults.put(factor, result);
-				// Look for the force death in other factors to see if this one results in a force death
-				// We pick up whatever joint move because the legal move in a factor won't affect other factors (in theory)
-				List<Move> jointMove = factor.getRandomJointMove(state, role, moves.get(0));
-				MachineState nextState = stateMachine.getNextState(state, jointMove);
-				for (DumplingPropNetStateMachine anotherFactor : effectiveFactors) {
-					if (!worstValues.keySet().contains(anotherFactor) && anotherFactor != factor) {
-						currentFactor = anotherFactor;
-						heuristic.setStateMachine(anotherFactor);
-						// We've stepped ahead one step, so depth starts at 1 
-						Integer testValue = maxScore(role, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
-						worstValues.put(anotherFactor, testValue);
-					}
+				} else {
+					isSearchComplete = false;					
 				}
 			}
 			
+			//System.out.println(role + ": factor searched " + result.value + " move " + result.move);
+			bestResults.put(factor, result);	
 		}
 
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
+			if (isDeathSearch)
+				System.out.println(role + ": min state " + state + ", move:" + move);
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
 			String moveString = move.toString();
@@ -359,13 +370,16 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (stateMoveScores == null) minStateScores.put(alphaBetaStateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
-
+			if (isDeathSearch)
+				System.out.println(role + ": min " + state + " returns worstScore " + worstScore);
 			return heuristicUsed ? -worstScore : worstScore;
 		}
 
 		private Integer maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
+			if (isDeathSearch)
+				System.out.println(role + ": max state " + state );
 			/* First check if this state is terminal */
-			if (currentFactor.isTerminal(state)) { 			
+			if (currentFactor.isTerminal(state)) {				
 				numStatesExpanded++;
 				return currentFactor.getGoal(state, role);		
 			}
@@ -393,8 +407,10 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 
 				// this is as far as we go, so calculate heuristic and be done w/ it
 				heuristicUsed = true;
-				if (heuristic != null && moves.size() > 1) {
+				if (heuristic != null /*&& moves.size() > 1*/) {
 					Integer value = heuristic.getScore(state, role);
+					if (isDeathSearch)
+						System.out.println(role + ": max " + state + " heuristic returns worstScore " + value);
 					if (value != null)
 						return -value; // return heuristic scores as negative to differentiate for caching purposes
 					return null;
@@ -442,7 +458,9 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 
 				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(alphaBetaStateString, bestValue);
-
+				
+				if (isDeathSearch)
+					System.out.println(role + ": max " + state + " returns worstScore " + bestValue);
 				return heuristicUsed ? -bestValue : bestValue;
 			}
 		}

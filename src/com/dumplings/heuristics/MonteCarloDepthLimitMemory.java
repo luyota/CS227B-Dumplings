@@ -64,8 +64,14 @@ public class MonteCarloDepthLimitMemory extends AbstractHeuristic implements Pla
 				}
 				if (randomMoves != null)
 					currentState = stateMachine.getNextState(currentState, randomMoves);
-				else
-					return score == null ? null : score / i;
+				else { 
+					//TODO: This line has some problem. When should it be reached?
+					if (score == null) return null;
+					score /= i;
+					if (score == 0) score = 1;
+					if (score == 100) score = 99;
+					return score;
+				}
 			}
 			// If it gets to the end before max depth
 			if (stateMachine.isTerminal(currentState)) {
