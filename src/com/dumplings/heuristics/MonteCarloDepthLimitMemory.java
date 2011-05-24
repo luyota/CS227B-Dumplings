@@ -23,9 +23,13 @@ public class MonteCarloDepthLimitMemory extends AbstractHeuristic implements Pla
 	private int maxDepth = Integer.MAX_VALUE;
 	private Set<String> stateMoveCache = new HashSet<String>();
 	
+	
 	public MonteCarloDepthLimitMemory(StateMachine sm) {
 		stateMachine = sm;
 	}
+	
+	@Override
+	public void setStateMachine(StateMachine stateMachine) { this.stateMachine = stateMachine; }
 	
 	public void setSampleSize(int size) {
 		numSamples = size;
