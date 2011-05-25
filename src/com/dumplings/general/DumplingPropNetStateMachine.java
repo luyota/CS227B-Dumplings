@@ -61,6 +61,60 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private Proposition terminalProposition = null;
 	private Map<Role, Set<Proposition>> legalPropositions = null;
 	private Map<Role, Set<Proposition>> goalPropositions = null;
+	private List<Proposition> latches = new ArrayList<Proposition>();
+	
+	
+	/*
+	 * Checks whether p is a (anti)requirement for q
+	 */
+	public boolean _isRequirement(Proposition p, Proposition q, boolean anti) {
+		// Need to check whether q => p (or q => not(p)) holds
+		// So find determinants of q, try out all combinations of input values
+		// for the determinants and check whether the above holds or not
+		Set<Proposition> determinants = getDeterminants(q);
+		List<Boolean[]> combinations = getCombinations(determinants.size());
+		for (Boolean[] b : combinations) {
+			// Set the propositions to the corresponding truth values
+			int i = 0;
+			for (Proposition pp : determinants) {
+				pp.setValue(b[i]);
+				i++;
+			}
+			
+			// Propagate the values
+			for (Proposition pp : ordering) {
+				if (pp.getInputs().size() == 1) {
+					pp.setValue(pp.getSingleInput().getValue());
+				}
+			}
+			
+			getStateFromBase();
+			
+			if (q.getValue()) {
+				if (anti) {
+					// Anti-requirement
+					if (p.getValue())
+						return false;
+				}
+				else {
+					// Requirement
+					if (!p.getValue())
+						return false;
+				}
+					
+			}
+			
+		}
+		return true;
+	}
+
+	public boolean isRequirement(Proposition p, Proposition q) {
+		return _isRequirement(p, q, false);
+	}
+	
+	public boolean isAntiRequirement(Proposition p, Proposition q) {
+		return _isRequirement(p, q, true);
+	}
 	
 	public boolean isInhibiting(Proposition p, Proposition q) {
 		// Strategy: get input/base propositions that determine p
@@ -83,18 +137,20 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				}
 			}
 			
+			getStateFromBase();
+			
 			if (p.getValue()) {
-				// Check if q is false in all next states
-				try {
-					for (MachineState state : getNextStates(getStateFromBase())) {
-						updateState(state, null);
-						if (q.getValue())
-							return false;
+				// Propagate the values
+				for (Proposition pp : ordering) {
+					if (pp.getInputs().size() == 1) {
+						pp.setValue(pp.getSingleInput().getValue());
 					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
+				
+				getStateFromBase();
+				
+				if (q.getValue())
+					return false;
 			}
 			
 		}
@@ -105,8 +161,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	public List<Proposition> getLatches() {
 		List<Proposition> propositions = new ArrayList<Proposition>(
 				propNet.getPropositions());
-		List<Proposition> latches = new ArrayList<Proposition>();
 		
+		// Go through all propositions and check if it is latch
 		for (Proposition p : propositions) {
 			try {
 				if (isLatch(p))
@@ -120,7 +176,12 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	}
 
 	public boolean isLatch(Proposition p) throws MoveDefinitionException, TransitionDefinitionException {
+		if (initProposition.equals(p) || inputPropositions.containsValue(p))
+			return false;	// init and input propositions are never considered as latches
+		
 		Set<Proposition> determinants = getDeterminants(p);
+		if (determinants.size() == 0)
+			return false;	// this proposition only depends on init, so is not a latch
 		
 		// Enumerate all possible values for determinants
 		// In each case, check whether "p true => p true in next states" holds			
@@ -140,14 +201,22 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				}
 			}
 			
+			getStateFromBase();
+			
 			// Check whether p is true
 			if (p.getValue()) {
-				// Check if p is true in all next states
-				for (MachineState state : getNextStates(getStateFromBase())) {
-					updateState(state, null);
-					if (!p.getValue())
-						return false;
+				// Propagate the values
+				for (Proposition pp : ordering) {
+					if (pp.getInputs().size() == 1) {
+						pp.setValue(pp.getSingleInput().getValue());
+					}
 				}
+				
+				// Update base propositions
+				getStateFromBase();
+				
+				if (!p.getValue())
+					return false;
 			}
 		}
 		return true;
@@ -155,7 +224,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	
 	/*
 	 * Given an integer n, this computes the power set of a set of length n
-	 * It returns a list of boolean arrays of length n
+	 * It returns a list of boolean arrays of length n, each item indicating whether the element
+	 * at that position is included in that set or not
 	 */
 	private List<Boolean[]> getCombinations(int n) {
 		List<Boolean[]> list = new ArrayList<Boolean[]>();
@@ -166,7 +236,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			Boolean[] b = new  Boolean[n];
 			// Fill this entry of size n
 			for (int j = 0; j < n; j++) {
-				// Check whether j-th bit is true or false
+				// Check whether j'th bit is true or false
 				if ((i & (1 << j)) > 0)
 					b[j] = true;
 				else
@@ -183,13 +253,35 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private Set<Proposition> getDeterminants(Component p) {
 		Set<Proposition> determinants = new HashSet<Proposition>();
 		
-		Set<Component> inputs = p.getInputs();
+		Set<Component> inputs = new HashSet<Component>();
+		inputs.addAll(p.getInputs());
+		
+		while (!inputs.isEmpty()) {
+			Component c = inputs.iterator().next();
+			inputs.remove(c);
+			if (determinants.contains(c))
+				continue;
+			
+			if (c.equals(p))
+				determinants.add((Proposition) c);
+			else {
+				if (c instanceof Proposition && 
+						(inputPropositions.containsValue(c) || basePropositions.containsValue(c))) {
+					determinants.add((Proposition) c);
+					inputs.addAll(c.getInputs());
+				} else {
+					inputs.addAll(c.getInputs());
+				}
+			}
+			
+		}
 		for (Component c : inputs) {
 			if (c instanceof Proposition) {
-				if (inputPropositions.containsValue(c))
+				if (inputPropositions.containsValue(c) || basePropositions.containsValue(c))
 					determinants.add((Proposition) c);
-				else if (basePropositions.containsValue(c))
-					determinants.add((Proposition) c);
+				else
+					determinants.addAll(getDeterminants(c));	// Step through until we find an
+																// input/base proposition
 			}
 			else {
 				determinants.addAll(getDeterminants(c));
@@ -199,6 +291,24 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		return determinants;
 	}
 
+	public boolean isDeadState(MachineState state, Role role) throws GoalDefinitionException {
+		updateState(state, null);
+		Proposition goalProposition = null;
+		for (Proposition goal : goalPropositions.get(role)) {
+			if (getGoalValue(goal) == 100)
+				goalProposition = goal;
+		}
+		
+		if (goalProposition == null)
+			throw new GoalDefinitionException(state, role);
+		
+		for (Proposition latch : latches) {
+			if (latch.getValue() && isInhibiting(latch, goalProposition))
+				return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Initializes the PropNetStateMachine. You should compute the topological
 	 * ordering here. Additionally you may compute the initial state here, at
@@ -222,10 +332,10 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		terminalProposition = propNet.getTerminalProposition();
 
 		ordering = getOrdering();
-		/*
-		 * System.out.println("Ordering:"); for (Component c : ordering) {
-		 * System.out.println(c); }
-		 */
+		getLatches();		 
+		System.out.println("printing latches");
+		for (Proposition p : latches)
+			System.out.println(p);
 	}
 
 	/**
@@ -399,10 +509,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 
 		visitedPropositions.addAll(basePropositions.values());
 		visitedPropositions.addAll(inputPropositions.values());
-		visitedPropositions.add(propNet.getInitProposition()); // not sure if
-																// necessary,
-																// but shouldn't
-																// hurt
+		visitedPropositions.add(propNet.getInitProposition()); 
 
 		unvisitedPropositions.addAll(propositions);
 		unvisitedPropositions.removeAll(visitedPropositions);
@@ -530,6 +637,20 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		Set<GdlSentence> contents = new HashSet<GdlSentence>();
 		for (Proposition p : propNet.getBasePropositions().values()) {
 			p.setValue(p.getSingleInput().getValue());
+			
+			if (p.getValue()) {
+				contents.add(p.getName().toSentence());
+			}
+
+		}
+		return new PropNetMachineState(contents);
+	}
+	
+	public PropNetMachineState getStateFromBase2() {
+		Set<GdlSentence> contents = new HashSet<GdlSentence>();
+		for (Proposition p : propNet.getBasePropositions().values()) {
+			
+			
 			if (p.getValue()) {
 				contents.add(p.getName().toSentence());
 			}

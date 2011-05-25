@@ -17,10 +17,11 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
+import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.general.TimeoutHandler;
 
-public class MiniMax extends PlayerStrategy {
+public class MiniMaxDeadStateRemoval extends PlayerStrategy {
 	public Map<String, Integer> maxStateScores;
 	Map<String, Map<String, Integer>> minStateScores;
 	private MiniMaxComputer mm;
@@ -28,7 +29,7 @@ public class MiniMax extends PlayerStrategy {
 	private int numStatesExpanded;
 	private Timer timer;
 
-	public MiniMax(StateMachine sm) {
+	public MiniMaxDeadStateRemoval(StateMachine sm) {
 		super(sm);
 		maxStateScores = new HashMap<String, Integer>();
 		minStateScores = new HashMap<String, Map<String, Integer>>();
@@ -160,6 +161,8 @@ public class MiniMax extends PlayerStrategy {
 				numStatesExpanded++;
 				return stateMachine.getGoal(state, role);
 			}
+			else if (((DumplingPropNetStateMachine) stateMachine).isDeadState(state, role))
+				return 0;
 
 			String stateString = canonicalizeStateString(state);
 

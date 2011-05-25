@@ -1,8 +1,6 @@
 package com.dumplings.players;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
@@ -14,33 +12,22 @@ import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import apps.player.detail.DetailPanel;
 
-import com.dumplings.general.AbstractHeuristic;
 import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
-import com.dumplings.heuristics.MonteCarlo;
-import com.dumplings.heuristics.WeightedHeuristic;
-import com.dumplings.strategies.AlphaBeta;
+import com.dumplings.strategies.MiniMaxDeadStateRemoval;
 
-/**
- * AlphaBetaPlayer plays by using alpha-beta-pruning
- */
-public final class PureAlphaBetaPlayer extends StateMachineGamer
+public final class DeadStateRemovalPlayer extends StateMachineGamer
 {
 	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		strategy = new AlphaBeta(getStateMachine(), Integer.MAX_VALUE);
-		List<AbstractHeuristic> heuristics = new ArrayList<AbstractHeuristic>();
+		strategy = new MiniMaxDeadStateRemoval(getStateMachine());
+		strategy.enableCache(false);
 		
-		heuristics.add(new MonteCarlo(this.getStateMachine()));
-		
-		Map<AbstractHeuristic, Double> weightMap = strategy.metaGamer.evaluateHeuristics(heuristics, this.getRole(), timeout);
-		for (AbstractHeuristic heuristic : weightMap.keySet()) {
-			System.out.println(heuristic.toString()+": "+weightMap.get(heuristic));
-		}
-		strategy.setHeuristic(new WeightedHeuristic(weightMap));
+		strategy.getBestMove(getCurrentState(), getRole(), timeout);
+		System.out.println("Expanded " + ((MiniMaxDeadStateRemoval) strategy).getNumStatesExpanded());
 	}
 	
 	/**
@@ -80,7 +67,7 @@ public final class PureAlphaBetaPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Pure Alpha-Beta";
+		return "DeadStateRemoval Player";
 	}
 
 	@Override
