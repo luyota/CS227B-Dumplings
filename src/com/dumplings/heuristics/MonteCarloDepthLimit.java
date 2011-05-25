@@ -21,6 +21,8 @@ public class MonteCarloDepthLimit extends AbstractHeuristic implements PlayerHeu
 	public MonteCarloDepthLimit(StateMachine sm) {
 		stateMachine = sm;
 	}
+	@Override
+	public void setStateMachine(StateMachine stateMachine) { this.stateMachine = stateMachine; }
 	
 	public void setSampleSize(int size) {
 		numSamples = size;

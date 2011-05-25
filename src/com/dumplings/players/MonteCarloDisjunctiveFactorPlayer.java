@@ -1,6 +1,8 @@
 package com.dumplings.players;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
@@ -18,33 +20,43 @@ import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarloDepthLimitMemory;
 import com.dumplings.strategies.IDSAlphaBeta;
+import com.dumplings.strategies.IDSAlphaBetaFactor;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
-public final class MonteCarloPlayer extends StateMachineGamer
+public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 {
 	PlayerStrategy strategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		System.out.println("Finding latches");
-		for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
-			System.out.println(p);
-		System.out.println("Done");
+		//System.out.println("Finding latches");
+		//for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
+		//	System.out.println(p);
+		//System.out.println("Done");
 		
-		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
-		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
+		//DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+		Set<DumplingPropNetStateMachine> factors = 
+			new HashSet<DumplingPropNetStateMachine>(((DumplingPropNetStateMachine)getStateMachine()).propNetFactors());
+		//Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
+		//factors.add((DumplingPropNetStateMachine)getStateMachine());
 		
-		((DumplingPropNetStateMachine)getStateMachine()).propNetFactors();
+		// If no factors are returned then use the original state machine
+		if (factors == null) { 
+			strategy = new IDSAlphaBeta(getStateMachine());
+		} else {
+			strategy = new IDSAlphaBetaFactor(getStateMachine(), factors);
+		}
 		
-		//strategy = new IDSAlphaBeta(getStateMachine());
-		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
+		
+	
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
 		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
+		
 	}
 	
 	/**
@@ -88,7 +100,7 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	}
 	@Override
 	public String getName() {
-		return "Monte Carlo Dumplings";
+		return "Monte Carlo Disjunctive Factor Dumpling";
 	}
 
 	@Override
