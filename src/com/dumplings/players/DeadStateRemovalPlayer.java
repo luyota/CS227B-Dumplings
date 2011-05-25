@@ -23,6 +23,7 @@ public final class DeadStateRemovalPlayer extends StateMachineGamer
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
+		((DumplingPropNetStateMachine) getStateMachine()).enableLatches();
 		strategy = new MiniMaxDeadStateRemoval(getStateMachine());
 		strategy.enableCache(false);
 		

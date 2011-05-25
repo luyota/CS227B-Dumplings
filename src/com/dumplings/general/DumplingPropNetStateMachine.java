@@ -47,7 +47,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private List<Role> roles;
 	/*
 	 * This is used to cache the state when calling updateState so that it
-	 * doesn't have to recompute that everytime.
+	 * doesn't have to recompute that every time.
 	 */
 	private MachineState savedState = null;
 
@@ -63,6 +63,9 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private Map<Role, Set<Proposition>> goalPropositions = null;
 	private List<Proposition> latches = new ArrayList<Proposition>();
 	
+	public void enableLatches() {
+		getLatches();
+	}
 	
 	/*
 	 * Checks whether p is a (anti)requirement for q
@@ -161,6 +164,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	public List<Proposition> getLatches() {
 		List<Proposition> propositions = new ArrayList<Proposition>(
 				propNet.getPropositions());
+		
+		initProposition.setValue(false);
 		
 		// Go through all propositions and check if it is latch
 		for (Proposition p : propositions) {
@@ -332,10 +337,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		terminalProposition = propNet.getTerminalProposition();
 
 		ordering = getOrdering();
-		getLatches();		 
-		System.out.println("printing latches");
-		for (Proposition p : latches)
-			System.out.println(p);
 	}
 
 	/**

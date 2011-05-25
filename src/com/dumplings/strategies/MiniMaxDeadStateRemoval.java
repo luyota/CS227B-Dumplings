@@ -92,6 +92,7 @@ public class MiniMaxDeadStateRemoval extends PlayerStrategy {
 		public Move getBestMove() {
 			return bestMove;
 		}
+		
 		public Integer getBestValue() {
 			return bestValue;
 		}
