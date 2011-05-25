@@ -55,6 +55,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 	public void setInitialDepth(int d) { this.initialDepth = d; }
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
+		System.out.println("IDSAlphaBeta getBestMove");
 		long start = System.currentTimeMillis();
 		
 		Move bestMove = null;		
@@ -112,7 +113,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
-			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestValue);
+			
+			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestValue);			
 			maxDepth++;
 		}
 		
@@ -189,7 +191,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				if (heuristic != null)
 					heuristic.cleanup();
 
-				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
 				if (testValue != null) {
 					if (testValue < 0)
 						isSearchComplete = false;

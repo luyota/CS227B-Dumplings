@@ -42,7 +42,7 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		} else {
 			Set<DumplingPropNetStateMachine> factors = 
 				new HashSet<DumplingPropNetStateMachine>(((DumplingPropNetStateMachine)getStateMachine()).propNetFactors());
-			System.out.println(factors.size());
+			
 			if (factors.size() > 1)
 				strategy = new IDSAlphaBetaFactor(sm, factors);
 			else

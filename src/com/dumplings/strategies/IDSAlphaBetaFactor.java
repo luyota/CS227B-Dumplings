@@ -72,6 +72,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 	}
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
+		System.out.println("IDSAlphaBetaFactor getBestMove");
 		long start = System.currentTimeMillis();		
 
 		timer = new Timer();
@@ -260,7 +261,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				*/
 				
 				currentFactor = factor;
-				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
+				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
 				
 				if (testValue != null && testValue == 0) {
 					isDeathFound = true;
@@ -309,7 +310,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (heuristic != null)
 					heuristic.cleanup();
 				
-				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+				Integer testValue = minScore(role, move, state, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
 				// If not heuristic
 				if (testValue != null) {						
 					if (testValue < 0)
