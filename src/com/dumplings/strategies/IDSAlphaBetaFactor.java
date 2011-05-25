@@ -73,7 +73,6 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		long start = System.currentTimeMillis();		
-				
 
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
@@ -230,27 +229,29 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			heuristic = null;			
 			
 			for (DumplingPropNetStateMachine factor : effectiveFactors) {
-				
 				// Look for the force death in other factors to see if this one results in a force death
 				// We pick up whatever joint move because the legal move in a factor won't affect other factors (in theory)
-				List<Move> jointMove = factor.getRandomJointMove(state);
+				DumplingPropNetStateMachine differentFactor = null;
+				for (DumplingPropNetStateMachine anotherFactor : effectiveFactors) {
+					if (anotherFactor != factor) {
+						differentFactor = anotherFactor;
+						break;
+					}
+				}
+				
+				if (differentFactor == null)
+					break;
+				
+				List<Move> jointMove = differentFactor.getRandomJointMove(state);
 				MachineState nextState = stateMachine.getNextState(state, jointMove);
 				
+				currentFactor = factor;
+				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
 				
-				Set<DumplingPropNetStateMachine> visited = new HashSet<DumplingPropNetStateMachine>();
-				for (DumplingPropNetStateMachine anotherFactor : effectiveFactors) {
-					if (!visited.contains(anotherFactor) && anotherFactor != factor) {
-						currentFactor = anotherFactor;				
-						// We've stepped ahead one step, so depth starts at 1 						
-						Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
-						
-						visited.add(anotherFactor);
-						if (testValue != null && testValue == 0) {
-							deathFactor = anotherFactor; 
-							break;
-						}
-					}
-				}			
+				if (testValue != null && testValue == 0) {
+					deathFactor = factor; 
+					break;
+				}
 			}
 			
 			heuristic = tempHeuristic;
@@ -269,6 +270,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				}
 			}
 		}
+		
 		private void searchFactor(DumplingPropNetStateMachine factor, MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 			//The first move that results in an unknown state
 			
@@ -333,7 +335,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (stopExecution) {
 					break;
 				}
-				MachineState newState = currentFactor.getNextState(state, jointMove);
+				MachineState newState = stateMachine.getNextState(state, jointMove);
 				Integer newScore = maxScore(role, newState, alpha, beta, depth + 1);
 				if (newScore != null) {
 					int testScore = newScore;
