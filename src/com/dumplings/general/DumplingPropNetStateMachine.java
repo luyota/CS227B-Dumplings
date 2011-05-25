@@ -48,7 +48,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private MachineState savedState = null;
 
 	/*
-	 * The propositions, stored here so we don't have to load everytime it's
+	 * The propositions, stored here so we don't have to load every time it's
 	 * used
 	 */
 	private Map<GdlTerm, Proposition> inputPropositions = null;
@@ -59,10 +59,43 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private Map<Role, Set<Proposition>> goalPropositions = null;
 	
 	public boolean isInhibiting(Proposition p, Proposition q) {
-		// TODO: check whether p inhibits q
-		// Problem: enumerate all possible states? Seems inefficient.
+		// Strategy: get input/base propositions that determine p
+		// Then check all combinations for determinants and check whether "p true => q false" holds
 		
-		return false;
+		Set<Proposition> determinants = getDeterminants(p);
+		List<Boolean[]> combinations = getCombinations(determinants.size());
+		for (Boolean[] b : combinations) {
+			// Set the propositions to the corresponding truth values
+			int i = 0;
+			for (Proposition pp : determinants) {
+				pp.setValue(b[i]);
+				i++;
+			}
+			
+			// Propagate the values
+			for (Proposition pp : ordering) {
+				if (pp.getInputs().size() == 1) {
+					pp.setValue(pp.getSingleInput().getValue());
+				}
+			}
+			
+			if (p.getValue()) {
+				// Check if q is false in all next states
+				try {
+					for (MachineState state : getNextStates(getStateFromBase())) {
+						updateState(state, null);
+						if (q.getValue())
+							return false;
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		}
+		
+		return true;
 	}
 	
 	public List<Proposition> getLatches() {
@@ -254,7 +287,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				p.setValue(p.getSingleInput().getValue());
 			}
 		}
-		System.out.println("getInitialState " + getStateFromBase());
 		return getStateFromBase();
 	}
 

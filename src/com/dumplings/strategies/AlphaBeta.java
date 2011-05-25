@@ -45,6 +45,10 @@ public class AlphaBeta extends PlayerStrategy {
 		useCaching = flag;
 	}
 	
+	public int getNumStatesExpanded() {
+		return numStatesExpanded;
+	}
+	
 	public Move getBestMove(MachineState state, Role role, long timeout) throws MoveDefinitionException {
 		// Call the thread that does the computation
 		abc = new AlphaBetaComputer(state, role);
