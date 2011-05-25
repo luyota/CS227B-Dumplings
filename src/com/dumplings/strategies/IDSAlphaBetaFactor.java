@@ -245,6 +245,11 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				List<Move> jointMove = differentFactor.getRandomJointMove(state);
 				MachineState nextState = stateMachine.getNextState(state, jointMove);
 				
+				/*
+				System.out.println("Random move: " + jointMove);
+				System.out.println("Moves available: " + factor.getLegalMoves(nextState, role));
+				*/
+				
 				currentFactor = factor;
 				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
 				
@@ -273,7 +278,6 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		
 		private void searchFactor(DumplingPropNetStateMachine factor, MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 			//The first move that results in an unknown state
-			
 			numStatesExpanded = 1;
 						
 			currentFactor = factor;
@@ -379,9 +383,9 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			if (isDeathSearch)
 				System.out.println(role + ": max state " + state );
 			/* First check if this state is terminal */
-			if (currentFactor.isTerminal(state)) {				
+			if (stateMachine.isTerminal(state)) {				
 				numStatesExpanded++;
-				return currentFactor.getGoal(state, role);		
+				return stateMachine.getGoal(state, role);		
 			}
 
 			String stateString = Canonicalizer.stateString(state);
