@@ -53,7 +53,7 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		//factors.add((DumplingPropNetStateMachine)getStateMachine());
 		
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
-		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(3);
+		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(4);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
 	}
