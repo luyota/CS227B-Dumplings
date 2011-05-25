@@ -344,7 +344,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public boolean isTerminal(MachineState state) {
-		if (!state.equals(savedState))
+		//if (!state.equals(savedState))
 			updateState(state, null);
 		// System.out.println("isTerminal: " + getStateFromBase());
 		return terminalProposition.getValue();
@@ -357,9 +357,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public int getGoal(MachineState state, Role role)
-			throws GoalDefinitionException {
-		if (!state.equals(savedState))
+	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
+		//if (!state.equals(savedState))
 			updateState(state, null);
 
 		Integer goalValue = null;
@@ -410,7 +409,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
-		if (!state.equals(savedState))
+		//if (!state.equals(savedState))
 			updateState(state, null);
 
 		List<Move> moves = new ArrayList<Move>();;
@@ -434,29 +433,29 @@ public class DumplingPropNetStateMachine extends StateMachine {
 
 	public void updateState(MachineState state, List<Move> moves) {
 		// Set base propositions
-		for (Proposition p : basePropositions.values()) {
+		for (Proposition p : propNet.getBasePropositions().values()) {
 			p.setValue(false);
 		}
 
 		for (GdlSentence s : state.getContents()) {
-			basePropositions.get(s.toTerm()).setValue(true);
+			propNet.getBasePropositions().get(s.toTerm()).setValue(true);
 		}
 	
 
 		// Set input propositions
-		for (Proposition p : inputPropositions.values()) {
+		for (Proposition p : propNet.getInputPropositions().values()) {
 			p.setValue(false);
 		}
 
 		if (moves != null) {
 			List<GdlTerm> does = toDoes(moves);
 			for (GdlTerm term : does) {
-				Proposition p = inputPropositions.get(term);
+				Proposition p = propNet.getInputPropositions().get(term);
 				p.setValue(true);
 			}
 		}
 
-		initProposition.setValue(false);
+		propNet.getInitProposition().setValue(false);
 
 		// Propagate the values
 		for (Proposition p : ordering) {
@@ -713,14 +712,17 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			
 					factor.legalPropositions = new HashMap<Role, Set<Proposition>>();
 					for (Proposition input : inputs.values()) {
+						
 						Proposition legalProp = propNet.getLegalInputMap().get(input);
-						Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
-						Set<Proposition> roleProps = factor.legalPropositions.get(r);
-						if (roleProps == null) {
-							roleProps = new HashSet<Proposition>();
-							factor.legalPropositions.put(r, roleProps);
+						if (legalProp != null) { 
+							Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
+							Set<Proposition> roleProps = factor.legalPropositions.get(r);
+							if (roleProps == null) {
+								roleProps = new HashSet<Proposition>();
+								factor.legalPropositions.put(r, roleProps);
+							}
+							roleProps.add(legalProp);
 						}
-						roleProps.add(legalProp);
 					}
 			
 					factor.propNet = this.propNet;
@@ -770,7 +772,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		for (DumplingPropNetStateMachine factor : allFactorMoves.values()) {
 			System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size());
 			
-			/*
 			// all the details...
 			for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
 				System.out.println("\t" + inputTerm);
@@ -780,7 +781,16 @@ public class DumplingPropNetStateMachine extends StateMachine {
 					System.out.println("\t" + legal.getName());
 				}
 			}
-			*/
+		}
+		
+		System.out.println("all...");
+		for (GdlTerm inputTerm : this.inputPropositions.keySet()) {
+			System.out.println("\t" + inputTerm);
+		}
+		for (Set<Proposition> legalSet : this.legalPropositions.values()) {
+			for (Proposition legal : legalSet) {
+				System.out.println("\t" + legal.getName());
+			}
 		}
 		
 		return allFactorMoves.values();

@@ -7,7 +7,6 @@ import java.util.Set;
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
-import util.propnet.architecture.components.Proposition;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
@@ -36,27 +35,27 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		//for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
 		//	System.out.println(p);
 		//System.out.println("Done");
+		StateMachine sm = getStateMachine();
+		if (sm.getRoles().size() == 1) {
+			sm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+			strategy = new IDSAlphaBeta(sm);
+		} else {
+			Set<DumplingPropNetStateMachine> factors = 
+				new HashSet<DumplingPropNetStateMachine>(((DumplingPropNetStateMachine)getStateMachine()).propNetFactors());
+			
+			if (factors.size() > 1)
+				strategy = new IDSAlphaBetaFactor(sm, factors);
+			else
+				strategy = new IDSAlphaBeta(sm);
+		}
 		
-		//DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
-		Set<DumplingPropNetStateMachine> factors = 
-			new HashSet<DumplingPropNetStateMachine>(((DumplingPropNetStateMachine)getStateMachine()).propNetFactors());
 		//Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
 		//factors.add((DumplingPropNetStateMachine)getStateMachine());
 		
-		// If no factors are returned then use the original state machine
-		if (factors == null) { 
-			strategy = new IDSAlphaBeta(getStateMachine());
-		} else {
-			strategy = new IDSAlphaBetaFactor(getStateMachine(), factors);
-		}
-		
-		
-	
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
-		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
+		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(4);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
-		
 	}
 	
 	/**
@@ -70,10 +69,11 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		//System.out.println("Moves available: " + moves.size());
-		//for (Move m : moves)
-		//	System.out.println(m);
-		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
+		Move selection;
+		if (moves.size() == 1)
+			selection = moves.get(0);
+		else 
+			selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();
 		
