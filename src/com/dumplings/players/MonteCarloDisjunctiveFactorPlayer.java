@@ -42,7 +42,8 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		} else {
 			Set<DumplingPropNetStateMachine> factors = 
 				new HashSet<DumplingPropNetStateMachine>(((DumplingPropNetStateMachine)getStateMachine()).propNetFactors());
-			if (factors.size() > 0)
+			System.out.println(factors.size());
+			if (factors.size() > 1)
 				strategy = new IDSAlphaBetaFactor(sm, factors);
 			else
 				strategy = new IDSAlphaBeta(sm);
@@ -52,7 +53,7 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		//factors.add((DumplingPropNetStateMachine)getStateMachine());
 		
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
-		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(5);
+		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(3);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
 	}
@@ -68,10 +69,11 @@ public final class MonteCarloDisjunctiveFactorPlayer extends StateMachineGamer
 		long start = System.currentTimeMillis();
 		
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		//System.out.println("Moves available: " + moves.size());
-		//for (Move m : moves)
-		//	System.out.println(m);
-		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
+		Move selection;
+		if (moves.size() == 1)
+			selection = moves.get(0);
+		else 
+			selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();
 		

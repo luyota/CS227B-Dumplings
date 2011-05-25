@@ -148,7 +148,9 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				System.out.println(role.toString() + ": Complete search at depth " + maxDepth + " from " + stateMachine.getLegalMoves(state, role).size() + " possible moves");
 				break;
 			}
-			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestResult.value);
+			if (abc.isDeath())
+				break;
+			System.out.println(role.toString() + ": Best score at depth " + maxDepth + ": " + currentBestResult.value + ", move: " + currentBestResult.move);
 			//prevBestResults = newBestResults;
 
 			maxDepth++;
@@ -163,12 +165,14 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			currentBestResult.move = moves.get(generator.nextInt(moves.size()));			
 		}
 		timer.cancel();
+		System.out.println(role.toString() + ": ========Summary======");
 		System.out.println(role.toString() + ": Max Depth: " + maxDepth + "  Move: " + currentBestResult.move);		
 		System.out.println(role.toString() + ": Playing move with score (0 might mean unknown): " + currentBestResult.value);
 		System.out.println(role.toString() + ": Accumulative cache hit min/max/ext: " + minCacheHit + "/" + maxCacheHit + "/" + extCacheHit);
 		System.out.println(role.toString() + ": # of entries in min/max/ext cache: " + minStateScores.size() + "/" + maxStateScores.size() + "/" + ((externalCache == null)?0:externalCache.size()));
 		long stop = System.currentTimeMillis();
 		System.out.println(role.toString() + ": time spent in getBestMove - " + (stop - start));
+		System.out.println("");
 		
 		
 		return currentBestResult.move;
@@ -186,7 +190,9 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		private boolean isSearchComplete = true;
 		private Set<DumplingPropNetStateMachine> effectiveFactors = new HashSet<DumplingPropNetStateMachine>();
 		private DumplingPropNetStateMachine currentFactor;
-		private boolean isDeathSearch = false;
+		private boolean isDeathFound = false;
+		
+		public boolean isDeath() { return isDeathFound; }
 
 		public AlphaBetaComputer(MachineState state, Role role) {
 			this.state = state;
@@ -228,6 +234,9 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			AbstractHeuristic tempHeuristic = heuristic;
 			heuristic = null;			
 			
+			long start, end;
+			
+			start = System.currentTimeMillis();
 			for (DumplingPropNetStateMachine factor : effectiveFactors) {
 				// Look for the force death in other factors to see if this one results in a force death
 				// We pick up whatever joint move because the legal move in a factor won't affect other factors (in theory)
@@ -254,16 +263,20 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 1);	
 				
 				if (testValue != null && testValue == 0) {
+					isDeathFound = true;
+					System.out.println(role + ": Fucking death factor found!!!!");
 					deathFactor = factor; 
 					break;
 				}
 			}
+			end = System.currentTimeMillis();
+			System.out.println(role + ": looking for death state takes " + (end - start));
 			
+			start = System.currentTimeMillis();
 			heuristic = tempHeuristic;
 			if (deathFactor != null) {
 				System.out.println(role + ": death factor found... only search in that factor.");
-				searchFactor(deathFactor, state, role);
-				System.out.println(role + ": Best factor size " + bestResults.size());
+				searchFactor(deathFactor, state, role);				
 			}
 			else { 
 				for (DumplingPropNetStateMachine factor : effectiveFactors) {			
@@ -274,6 +287,8 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 					}
 				}
 			}
+			end = System.currentTimeMillis();
+			System.out.println(role + ": real search takes " + (end - start));
 		}
 		
 		private void searchFactor(DumplingPropNetStateMachine factor, MachineState state, Role role) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
@@ -281,8 +296,8 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			numStatesExpanded = 1;
 						
 			currentFactor = factor;
-			if (heuristic != null)
-				heuristic.setStateMachine(factor);
+			//if (heuristic != null)
+			//	heuristic.setStateMachine(factor);
 			
 			Result result = new Result(null, Integer.MIN_VALUE);
 			List<Move> moves = factor.getLegalMoves(state, role);
@@ -312,13 +327,12 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				}
 			}
 			
-			System.out.println(role + ": factor searched " + result.value + " move " + result.move);
+			//System.out.println(role + ": factor searched " + result.value + " move " + result.move);
 			bestResults.put(factor, result);	
 		}
 
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-			if (isDeathSearch)
-				System.out.println(role + ": min state " + state + ", move:" + move);
+			
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
 			String moveString = move.toString();
@@ -374,14 +388,12 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (stateMoveScores == null) minStateScores.put(alphaBetaStateString, (stateMoveScores = new HashMap<String, Integer>()));
 				stateMoveScores.put(moveString, worstScore);
 			}
-			if (isDeathSearch)
-				System.out.println(role + ": min " + state + " returns worstScore " + worstScore);
+			
 			return heuristicUsed ? -worstScore : worstScore;
 		}
 
 		private Integer maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-			if (isDeathSearch)
-				System.out.println(role + ": max state " + state );
+			
 			/* First check if this state is terminal */
 			if (stateMachine.isTerminal(state)) {				
 				numStatesExpanded++;
@@ -413,8 +425,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				heuristicUsed = true;
 				if (heuristic != null /*&& moves.size() > 1*/) {
 					Integer value = heuristic.getScore(state, role);
-					if (isDeathSearch)
-						System.out.println(role + ": max " + state + " heuristic returns worstScore " + value);
+					
 					if (value != null)
 						return -value; // return heuristic scores as negative to differentiate for caching purposes
 					return null;
@@ -462,9 +473,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 
 				if (!stopExecution && !heuristicUsed) // don't cache if we're not 100% sure this is the best value
 					maxStateScores.put(alphaBetaStateString, bestValue);
-				
-				if (isDeathSearch)
-					System.out.println(role + ": max " + state + " returns worstScore " + bestValue);
+								
 				return heuristicUsed ? -bestValue : bestValue;
 			}
 		}
