@@ -560,14 +560,17 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			
 					factor.legalPropositions = new HashMap<Role, Set<Proposition>>();
 					for (Proposition input : inputs.values()) {
+						
 						Proposition legalProp = propNet.getLegalInputMap().get(input);
-						Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
-						Set<Proposition> roleProps = factor.legalPropositions.get(r);
-						if (roleProps == null) {
-							roleProps = new HashSet<Proposition>();
-							factor.legalPropositions.put(r, roleProps);
+						if (legalProp != null) { 
+							Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
+							Set<Proposition> roleProps = factor.legalPropositions.get(r);
+							if (roleProps == null) {
+								roleProps = new HashSet<Proposition>();
+								factor.legalPropositions.put(r, roleProps);
+							}
+							roleProps.add(legalProp);
 						}
-						roleProps.add(legalProp);
 					}
 			
 					factor.propNet = this.propNet;
