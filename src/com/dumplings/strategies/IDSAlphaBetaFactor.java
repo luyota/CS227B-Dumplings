@@ -1,5 +1,6 @@
 package com.dumplings.strategies;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -139,7 +140,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				}
 			} else {
 				// This shouldn't happen since newBestResult is as least assigned with the first factor's result.
-				System.out.println("Something bad happens...");
+				System.out.println("Something bad happened...");
 			}
 			if (currentBestResult.value == 100)
 				break;
@@ -195,21 +196,15 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		
 		public boolean isDeath() { return isDeathFound; }
 
-		public AlphaBetaComputer(MachineState state, Role role) {
+		public AlphaBetaComputer(MachineState state, Role role) throws MoveDefinitionException {
 			this.state = state;
 			this.role = role;
 			// Only search on the factors that the role can actually perform moves on
-			for(DumplingPropNetStateMachine factor : factors) {
-				try {
-					if (factor.getLegalMoves(state, role).size() > 0)
-						effectiveFactors.add(factor);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+			for(DumplingPropNetStateMachine factor : factors)
+				if (factor.getLegalMoves(state, role).size() > 0)
+					effectiveFactors.add(factor);
 		}
 		public HashMap<DumplingPropNetStateMachine, Result> getBestResults() {	return bestResults; }		
-		//public HashMap<DumplingPropNetStateMachine, Integer> getWorstValues() { return worstValues; }
 
 		public void run() {
 			try {
@@ -252,22 +247,21 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (differentFactor == null)
 					break;
 				
-				List<Move> jointMove = differentFactor.getRandomJointMove(state);
-				MachineState nextState = stateMachine.getNextState(state, jointMove);
-				
-				/*
-				System.out.println("Random move: " + jointMove);
-				System.out.println("Moves available: " + factor.getLegalMoves(nextState, role));
-				*/
-				
-				currentFactor = factor;
-				Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
-				
-				if (testValue != null && testValue == 0) {
-					isDeathFound = true;
-					System.out.println(role + ": Fucking death factor found!!!!");
-					deathFactor = factor; 
-					break;
+				List<Move> jointMove = null;
+				try {
+					jointMove = differentFactor.getRandomJointMove(state);
+				} catch (IllegalArgumentException e) {}
+				if (jointMove != null) {
+					MachineState nextState = stateMachine.getNextState(state, jointMove);
+					
+					currentFactor = factor;
+					Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
+					
+					if (testValue != null && testValue == 0) {
+						isDeathFound = true;
+						deathFactor = factor; 
+						break;
+					}
 				}
 			}
 			end = System.currentTimeMillis();
@@ -347,6 +341,8 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = currentFactor.getLegalJointMoves(state, role, move);
+			if (allJointMoves.isEmpty())
+				allJointMoves.add(Arrays.asList(new Move[]{ move }));
 			
 			int worstScore = Integer.MAX_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
