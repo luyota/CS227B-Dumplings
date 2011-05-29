@@ -199,10 +199,12 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		public AlphaBetaComputer(MachineState state, Role role) throws MoveDefinitionException {
 			this.state = state;
 			this.role = role;
+			System.out.println("# of factors: " + factors.size());
 			// Only search on the factors that the role can actually perform moves on
 			for(DumplingPropNetStateMachine factor : factors)
 				if (factor.getLegalMoves(state, role).size() > 0)
 					effectiveFactors.add(factor);
+			System.out.println("# of effective factors: " + effectiveFactors.size());
 		}
 		public HashMap<DumplingPropNetStateMachine, Result> getBestResults() {	return bestResults; }		
 
@@ -232,7 +234,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			
 			long start, end;
 			
-			start = System.currentTimeMillis();
+			start = System.currentTimeMillis();			
 			for (DumplingPropNetStateMachine factor : effectiveFactors) {
 				// Look for the force death in other factors to see if this one results in a force death
 				// We pick up whatever joint move because the legal move in a factor won't affect other factors (in theory)
