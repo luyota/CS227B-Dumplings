@@ -3,7 +3,6 @@ package com.dumplings.general;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -21,7 +20,9 @@ import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.Component;
 import util.propnet.architecture.PropNet;
+import util.propnet.architecture.components.And;
 import util.propnet.architecture.components.Constant;
+import util.propnet.architecture.components.Not;
 import util.propnet.architecture.components.Or;
 import util.propnet.architecture.components.Proposition;
 import util.propnet.architecture.components.Transition;
@@ -55,13 +56,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 * The propositions, stored here so we don't have to load every time it's
 	 * used
 	 */
-	private Map<GdlTerm, Proposition> inputPropositions = null;
-	private Map<GdlTerm, Proposition> basePropositions = null;
-	private Proposition initProposition = null;
-	private Proposition terminalProposition = null;
-	private Map<Role, Set<Proposition>> legalPropositions = null;
-	private Map<Role, Set<Proposition>> goalPropositions = null;
-	private List<Proposition> latches = new ArrayList<Proposition>();
+	public Map<GdlTerm, Proposition> inputPropositions = null;
+	public Map<GdlTerm, Proposition> basePropositions = null;
+	public Proposition initProposition = null;
+	public Proposition terminalProposition = null;
+	public Map<Role, Set<Proposition>> legalPropositions = null;
+	public Map<Role, Set<Proposition>> goalPropositions = null;
+	public List<Proposition> latches = new ArrayList<Proposition>();
 	
 	public void enableLatches() {
 		getLatches();
@@ -345,7 +346,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public boolean isTerminal(MachineState state) {
-		if (!state.equals(savedState))
+		//if (!state.equals(savedState))
 			updateState(state, null);
 		// System.out.println("isTerminal: " + getStateFromBase());
 		return terminalProposition.getValue();
@@ -359,7 +360,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
-		if (!state.equals(savedState))
+		//if (!state.equals(savedState))
 			updateState(state, null);
 
 		Integer goalValue = null;
@@ -410,7 +411,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 			throws MoveDefinitionException {
-		if (!state.equals(savedState))
+		//if (!state.equals(savedState))
 			updateState(state, null);
 
 		List<Move> moves = new ArrayList<Move>();;
@@ -658,39 +659,49 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		return new PropNetMachineState(contents);
 	}
 	
-	public Collection<DumplingPropNetStateMachine> propNetFactors() {
-		Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
-		Set<String> factoredPropositionTerms = new HashSet<String>();
-		
-		Map<GdlTerm, Proposition> universalInputs = new HashMap<GdlTerm, Proposition>();
-		for (Proposition input : this.inputPropositions.values()) {
-			if (input.getOutputs().size() == 0)
-				universalInputs.put(input.getName(), input);
-		}
-		
-		Proposition goalProposition = propNet.getTerminalProposition();
-		Set<Proposition> tailPropositions = new HashSet<Proposition>();
+	public Set<Component> findDisjunctGoals(Component terminalProposition) {
 		Set<Component> goalComponents = new HashSet<Component>();
 		
 		// search for a disjunction...
-		Or disjunction = findDisjunction(goalProposition, tailPropositions);
-		System.out.println("disjunction inputs: " + disjunction.getInputs());
-		if (disjunction != null) {
+		Or disjunction = findDisjunction(terminalProposition);
+		if (disjunction != null)
 			// collect 'new' goal components -- i.e. those leading into a disjunction
-			factoredPropositionTerms.clear();
 			for (Component disjunctionInput : disjunction.getInputs()) {
 				if (disjunctionInput instanceof Proposition) {
-					String termString = ((Proposition)disjunctionInput).getName().toString();
-					if (!factoredPropositionTerms.contains(termString)) {
-						factoredPropositionTerms.add(termString);
-						goalComponents.add(disjunctionInput);
-					}
-				} else {
 					goalComponents.add(disjunctionInput);
+				} else if (disjunctionInput instanceof And) {
+					System.out.println("And leading into potential disjunction: " + disjunctionInput);
+					boolean allNots = true;
+					for (Component andInput : disjunctionInput.getInputs())
+						if (!(andInput instanceof Not))
+							allNots = false;
+					System.out.println("...all inputs are " + (allNots ? "" : "NOT") + " 'Not's");
+					if (allNots)
+						goalComponents.addAll(disjunctionInput.getInputs());
 				}
 			}
+		
+		return goalComponents;
+	}
+	
+	public Set<DumplingPropNetStateMachine> propNetFactors() {
+		Set<DumplingPropNetStateMachine> factors = new HashSet<DumplingPropNetStateMachine>();
+		Map<GdlTerm, Proposition> universalInputs = new HashMap<GdlTerm, Proposition>();
+		Map<Role, Set<Proposition>> universalLegals = new HashMap<Role, Set<Proposition>>();
+		Map<Proposition, Proposition> legalInputMap = propNet.getLegalInputMap();
+		for (Role role : roles) {
+			universalLegals.put(role, new HashSet<Proposition>());
 		}
-		System.out.println("goal components: " + goalComponents);
+		for (Proposition input : this.inputPropositions.values()) {
+			Proposition legalProp = legalInputMap.get(input);
+			if (input.getOutputs().size() == 0 && legalProp != null) {
+				universalInputs.put(input.getName(), input);
+				Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
+				universalLegals.get(r).add(legalProp);
+			}
+		}
+		
+		Set<Component> goalComponents = findDisjunctGoals(propNet.getTerminalProposition());
 		
 		if (goalComponents.size() == 0) {
 			// no luck
@@ -699,10 +710,6 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		
 		for (Component goalComponent : goalComponents) {
 			Set<Proposition> visitedPropositions = new HashSet<Proposition>();
-			/*
-			if (disjunction != null)
-				visitedPropositions.addAll(tailPropositions);
-				*/
 			
 			stepBackToAllInputs(goalComponent, visitedPropositions);
 	
@@ -711,19 +718,24 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			DumplingPropNetStateMachine factor = new DumplingPropNetStateMachine();
 						
 			factor.inputPropositions = inputs;
-			factor.inputPropositions.putAll(universalInputs);
 	
 			factor.legalPropositions = new HashMap<Role, Set<Proposition>>();
 			for (Role role : this.roles) {
 				factor.legalPropositions.put(role, new HashSet<Proposition>());
 			}
+			
+			Set<Proposition> deadInputs = new HashSet<Proposition>();
 			for (Proposition input : inputs.values()) {
 				Proposition legalProp = propNet.getLegalInputMap().get(input);
-				if (legalProp != null) {
+				if (legalProp == null) {
+					deadInputs.add(input);
+				} else {
 					Role r = new Role((GdlProposition)((GdlFunction)legalProp.getName()).get(0).toSentence());
 					factor.legalPropositions.get(r).add(legalProp);
 				}
 			}
+			for (Proposition input : deadInputs)
+				factor.inputPropositions.remove(input.getName());
 	
 			factor.propNet = this.propNet;
 			factor.roles = this.roles;
@@ -742,24 +754,59 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size());
 		}
 		
+		Map<String, DumplingPropNetStateMachine> seenInputs = new HashMap<String, DumplingPropNetStateMachine>();
+		Set<DumplingPropNetStateMachine> junkFactors = new HashSet<DumplingPropNetStateMachine>();
 		for (DumplingPropNetStateMachine factor : factors) {
+			for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
+				if (!seenInputs.keySet().contains(inputTerm.toString()))
+					seenInputs.put(inputTerm.toString(), factor);
+				else {
+					System.out.println("Input '" + inputTerm + "' seen in another factor -- attempting to combine...");
+					DumplingPropNetStateMachine otherFactor = seenInputs.get(inputTerm.toString());
+					if (otherFactor.inputPropositions.keySet().containsAll(factor.inputPropositions.keySet())) {
+						junkFactors.add(factor);
+						break;
+					} else if (factor.inputPropositions.keySet().containsAll(otherFactor.inputPropositions.keySet())) {
+						junkFactors.add(otherFactor);
+					} else {
+						System.out.println("Found two semi-overlapping so-called factors. That's bogus...game not factorable!");
+						junkFactors.addAll(factors);
+						break;
+					}
+				}
+			}
+		}
+		
+		factors.removeAll(junkFactors);
+		
+		for (DumplingPropNetStateMachine factor : factors) {
+			/*
+			factor.inputPropositions.putAll(universalInputs);
+			for (Entry<Role, Set<Proposition>> legalEntry : universalLegals.entrySet()) {
+				factor.legalPropositions.get(legalEntry.getKey()).addAll(legalEntry.getValue());
+			}
+			*/
 			System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size());
 			
 			// all the details...
 			for (GdlTerm inputTerm : factor.inputPropositions.keySet()) {
 				System.out.println("\t" + inputTerm);
 			}
-			for (Set<Proposition> legalSet : factor.legalPropositions.values()) {
-				for (Proposition legal : legalSet) {
-					System.out.println("\t" + legal.getName());
+			
+			if (!junkFactors.contains(factor))
+				for (Set<Proposition> legalSet : factor.legalPropositions.values()) {
+					for (Proposition legal : legalSet) {
+						System.out.println("\t" + legal.getName());
+					}
 				}
-			}
 		}
-		
+			
+		// all the details...
 		System.out.println("all...");
 		for (GdlTerm inputTerm : this.inputPropositions.keySet()) {
 			System.out.println("\t" + inputTerm);
 		}
+		
 		for (Set<Proposition> legalSet : this.legalPropositions.values()) {
 			for (Proposition legal : legalSet) {
 				System.out.println("\t" + legal.getName());
@@ -769,14 +816,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		return factors;
 	}
 	
-	private Or findDisjunction(Component comp, Set<Proposition> tailPropositions) {
+	private Or findDisjunction(Component comp) {
 		if (comp instanceof Or) {
 			return (Or)comp;
 		} else if (comp instanceof Proposition) {
-			tailPropositions.add((Proposition)comp);
-			return findDisjunction(comp.getSingleInput(), tailPropositions);
+			return findDisjunction(comp.getSingleInput());
 		} else if (comp instanceof Constant || comp instanceof Transition) {
-			return findDisjunction(comp.getSingleInput(), tailPropositions);
+			return findDisjunction(comp.getSingleInput());
 		} else {
 			return null;
 		}
