@@ -780,12 +780,10 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		factors.removeAll(junkFactors);
 		
 		for (DumplingPropNetStateMachine factor : factors) {
-			/*
 			factor.inputPropositions.putAll(universalInputs);
 			for (Entry<Role, Set<Proposition>> legalEntry : universalLegals.entrySet()) {
 				factor.legalPropositions.get(legalEntry.getKey()).addAll(legalEntry.getValue());
 			}
-			*/
 			System.out.println("Found a factor, reduced input propositions from " + this.inputPropositions.size() + " to " + factor.inputPropositions.size());
 			
 			// all the details...
@@ -802,6 +800,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		}
 			
 		// all the details...
+		/*
 		System.out.println("all...");
 		for (GdlTerm inputTerm : this.inputPropositions.keySet()) {
 			System.out.println("\t" + inputTerm);
@@ -812,6 +811,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 				System.out.println("\t" + legal.getName());
 			}
 		}
+		*/
 		
 		return factors;
 	}

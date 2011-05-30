@@ -3,6 +3,7 @@ package com.dumplings.strategies;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -250,8 +251,24 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				List<Move> jointMove = null;
 				try {
 					jointMove = differentFactor.getRandomJointMove(state);
-				} catch (IllegalArgumentException e) {}
-				if (jointMove != null) {
+				} catch (IllegalArgumentException e) {
+					// some player doesn't have a legal move in differentFactor,
+					// so pull in some random move from across other factors
+					jointMove = new LinkedList<Move>();
+					for (Role playerRole : stateMachine.getRoles()) {
+						for (DumplingPropNetStateMachine otherFactor : factors) {
+							if (otherFactor != factor) {
+								Move move = otherFactor.getLegalMoves(state, playerRole).get(0);
+								if (move != null) {
+									jointMove.add(move);
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (jointMove != null && jointMove.size() == stateMachine.getRoles().size()) {
+					// all set -- go ahead and search for death
 					MachineState nextState = stateMachine.getNextState(state, jointMove);
 					
 					currentFactor = factor;
@@ -262,7 +279,64 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 						deathFactor = factor; 
 						break;
 					}
+				} else {
+					// still couldn't get a legal joint move from other factors,
+					// so we must need a move from the current factor, which means
+					// we have to check all legal joint moves from this factor in
+					// order to properly determine its 'death' status
+					List<List<Move>> allJointMoves = factor.getLegalJointMoves(state);
+					if (allJointMoves.size() > 0) {
+						for (List<Move> factorJointMove : allJointMoves) {
+							MachineState nextState = stateMachine.getNextState(state, factorJointMove);
+							
+							currentFactor = factor;
+							Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
+							
+							if (testValue != null && testValue == 0) {
+								isDeathFound = true;
+								deathFactor = factor; 
+								break;
+							}
+						}
+					} else {
+						// can't even get legal joint moves in *this* factor! so
+						// search for legal joint moves across all factors that
+						// include a legal move for out player in this factor
+						for (Move move : factor.getLegalMoves(state, role)) {
+							jointMove = new LinkedList<Move>();
+							jointMove.add(move);
+							for (Role playerRole : stateMachine.getRoles()) {
+								if (playerRole != role) {
+									for (DumplingPropNetStateMachine otherFactor : factors) {
+										Move playerMove = otherFactor.getLegalMoves(state, playerRole).get(0);
+										if (move != null) {
+											jointMove.add(move);
+											break;
+										}
+									}
+								}
+							}
+							
+							if (jointMove.size() != stateMachine.getRoles().size()) {
+								// ok...something is seriously wrong here
+								System.out.println(role + ": absolutely could not build a legal joint move for dead-factor search! whaaaa...?");
+							}
+							
+							MachineState nextState = stateMachine.getNextState(state, jointMove);
+							
+							currentFactor = factor;
+							Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
+							
+							if (testValue != null && testValue == 0) {
+								isDeathFound = true;
+								deathFactor = factor; 
+								break;
+							}
+						}
+					}
 				}
+				if (isDeathFound)
+					break;
 			}
 			end = System.currentTimeMillis();
 			System.out.println(role + ": looking for death state takes " + (end - start));
