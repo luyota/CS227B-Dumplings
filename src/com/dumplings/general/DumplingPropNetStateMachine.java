@@ -330,6 +330,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 
 		//propNet.renderToFile(new File(System.getProperty("user.home"),
 		//		"propnet.dot").toString());
+		
 		//propNet.renderToFile("J:\\propnet.dot");
 		roles = propNet.getRoles();
 		System.out.println("1");
@@ -349,7 +350,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		System.out.println("7");
 
 		ordering = getOrdering();
-		System.out.println("Initialization done.");
+		System.out.println("Initialization done");
 	}
 
 	/**
@@ -529,7 +530,9 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		unvisitedPropositions.removeAll(visitedPropositions);
 		
 		while (!unvisitedPropositions.isEmpty()) {	
-			if (isTimeout) return null;
+			if (isTimeout) 
+				return null;
+			
 			// Pick next proposition whose inputs have all been visited
 			Proposition nextProposition = null;			
 			for (Proposition unvisitedProp : unvisitedPropositions) {

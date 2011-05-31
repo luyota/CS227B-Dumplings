@@ -18,26 +18,26 @@ import com.dumplings.general.DumplingPropNetStateMachine;
 import com.dumplings.general.PlayerStrategy;
 import com.dumplings.heuristics.MonteCarloDepthLimitMemory;
 import com.dumplings.strategies.IDSAlphaBeta;
+import com.dumplings.strategies.MonteCarloMiniMax;
 
 /**
  * AlphaBetaPlayer plays by using alpha-beta-pruning
  */
 public final class MonteCarloPlayer extends StateMachineGamer
 {
-	PlayerStrategy strategy;
+	PlayerStrategy strategy, metaStrategy;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{	
-		//DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
-		//strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
 		strategy = new IDSAlphaBeta(getStateMachine());
+		metaStrategy = new MonteCarloMiniMax(getStateMachine(), 5);
 		
-		//((DumplingPropNetStateMachine)getStateMachine()).propNetFactors();
+		metaStrategy.getBestMove(getCurrentState(), getRole(), timeout);
+		strategy.setExternalCache(((MonteCarloMiniMax)metaStrategy).maxStateScores);
 		
-		//strategy = new IDSAlphaBeta(getStateMachine());
-		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
+
 		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(4);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
