@@ -28,16 +28,12 @@ public final class MonteCarloPlayer extends StateMachineGamer
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
-	{
-		System.out.println("Finding latches");
-		for (Proposition p: ((DumplingPropNetStateMachine)getStateMachine()).getLatches())
-			System.out.println(p);
-		System.out.println("Done");
+	{	
+		//DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
+		//strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
+		strategy = new IDSAlphaBeta(getStateMachine());
 		
-		DumplingPropNetStateMachine fsm = ((DumplingPropNetStateMachine)getStateMachine()).factorPropNet(getRole());
-		strategy = new IDSAlphaBeta(fsm == null ? getStateMachine() : fsm);
-		
-		((DumplingPropNetStateMachine)getStateMachine()).propNetFactors();
+		//((DumplingPropNetStateMachine)getStateMachine()).propNetFactors();
 		
 		//strategy = new IDSAlphaBeta(getStateMachine());
 		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
