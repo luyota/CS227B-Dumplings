@@ -323,7 +323,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	@Override
 	public void initialize(List<Gdl> description) {
 		propNet = OptimizingPropNetFactory.create(description);
-
+		System.out.println("Build propnet, finishing initialization");
+		
 		propNet.renderToFile(new File(System.getProperty("user.home"),
 				"propnet.dot").toString());
 		//propNet.renderToFile("J:\\propnet.dot");
@@ -518,6 +519,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		unvisitedPropositions.removeAll(visitedPropositions);
 
 		while (!unvisitedPropositions.isEmpty()) {
+			System.out.println(unvisitedPropositions.size());
+			
 			// Pick next proposition whose inputs have all been visited
 			Proposition nextProposition = null;
 			for (Proposition unvisitedProp : unvisitedPropositions) {
