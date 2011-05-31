@@ -1,6 +1,7 @@
 package com.dumplings.strategies;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -391,6 +392,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			
 			Result result = new Result(null, Integer.MIN_VALUE);
 			List<Move> moves = currentFactor.getLegalMoves(state, role);
+			Collections.shuffle(moves);
 			for (Move move : moves) {
 				if (stopExecution) {
 					isSearchComplete = false;

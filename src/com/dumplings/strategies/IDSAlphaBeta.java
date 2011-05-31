@@ -1,5 +1,6 @@
 package com.dumplings.strategies;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,7 +177,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 				heuristic.reset();
 			}
 			List<Move> moves = stateMachine.getLegalMoves(state, role);
-
+			Collections.shuffle(moves);
+			
 			bestMove = null;
 			bestValue = Integer.MIN_VALUE;
 			//The first move that results in an unknown state

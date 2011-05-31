@@ -326,6 +326,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 
 		propNet.renderToFile(new File(System.getProperty("user.home"),
 				"propnet.dot").toString());
+		//propNet.renderToFile("J:\\propnet.dot");
 		roles = propNet.getRoles();
 
 		savedState = null;
