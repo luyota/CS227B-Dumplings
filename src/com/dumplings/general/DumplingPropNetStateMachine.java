@@ -46,6 +46,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	private List<Proposition> ordering;
 	/** The player roles */
 	private List<Role> roles;
+	private boolean isTimeout = false;	
 	/*
 	 * This is used to cache the state when calling updateState so that it
 	 * doesn't have to recompute that every time.
@@ -56,6 +57,8 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 * The propositions, stored here so we don't have to load every time it's
 	 * used
 	 */
+	public void timeout() { isTimeout = true; }
+	public boolean isTimeout() { return isTimeout; }
 	public Map<GdlTerm, Proposition> inputPropositions = null;
 	public Map<GdlTerm, Proposition> basePropositions = null;
 	public Proposition initProposition = null;
@@ -322,23 +325,31 @@ public class DumplingPropNetStateMachine extends StateMachine {
 	 */
 	@Override
 	public void initialize(List<Gdl> description) {
-		propNet = OptimizingPropNetFactory.create(description);
+		propNet = OptimizingPropNetFactory.create(description);		
+		System.out.println("Finished building propnet. Initializing state machine.");
 
-		propNet.renderToFile(new File(System.getProperty("user.home"),
-				"propnet.dot").toString());
+		//propNet.renderToFile(new File(System.getProperty("user.home"),
+		//		"propnet.dot").toString());
 		//propNet.renderToFile("J:\\propnet.dot");
 		roles = propNet.getRoles();
-
+		System.out.println("1");
 		savedState = null;
 		inputPropositions = propNet.getInputPropositions();
+		System.out.println("2");
 		basePropositions = propNet.getBasePropositions();
+		System.out.println("3");
 		legalPropositions = propNet.getLegalPropositions();
+		System.out.println("4");
 		goalPropositions = propNet.getGoalPropositions();
+		System.out.println("5");
 
 		initProposition = propNet.getInitProposition();
+		System.out.println("6");
 		terminalProposition = propNet.getTerminalProposition();
+		System.out.println("7");
 
 		ordering = getOrdering();
+		System.out.println("Initialization done.");
 	}
 
 	/**
@@ -508,6 +519,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		 */
 		Set<Proposition> visitedPropositions = new HashSet<Proposition>();
 		Set<Proposition> unvisitedPropositions = new HashSet<Proposition>();
+		
 
 		visitedPropositions.addAll(basePropositions.values());
 		visitedPropositions.addAll(inputPropositions.values());
@@ -515,17 +527,18 @@ public class DumplingPropNetStateMachine extends StateMachine {
 
 		unvisitedPropositions.addAll(propositions);
 		unvisitedPropositions.removeAll(visitedPropositions);
-
-		while (!unvisitedPropositions.isEmpty()) {
+		
+		while (!unvisitedPropositions.isEmpty()) {	
+			if (isTimeout) return null;
 			// Pick next proposition whose inputs have all been visited
-			Proposition nextProposition = null;
+			Proposition nextProposition = null;			
 			for (Proposition unvisitedProp : unvisitedPropositions) {
 				// Calculate all propositional inputs of unvisitedProp
 				Set<Proposition> inputs = new HashSet<Proposition>();
 				Set<Component> toCheck = new HashSet<Component>();
-
 				toCheck.add(unvisitedProp);
 				while (!toCheck.isEmpty()) {
+				
 					Component comp = toCheck.iterator().next();
 					toCheck.remove(comp);
 					for (Component input : comp.getInputs()) {
@@ -535,13 +548,13 @@ public class DumplingPropNetStateMachine extends StateMachine {
 							toCheck.add(input);
 					}
 				}
-
+				
 				if (visitedPropositions.containsAll(inputs)) {
 					nextProposition = unvisitedProp;
 					break;
 				}
-			}
-
+			}			
+		
 			// Add to visited set and remove from unvisited set
 			visitedPropositions.add(nextProposition);
 			unvisitedPropositions.remove(nextProposition);
@@ -549,7 +562,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 			// Add to order
 			order.add(nextProposition);
 		}
-
+	
 		return order;
 	}
 
