@@ -1,6 +1,6 @@
 package com.dumplings.strategies;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -118,7 +118,8 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				if (isFirst) {
 					newBestResult = result;
 				} else {
-					if ((result.value != null && newBestResult.value != null && newBestResult.value < result.value) ||
+					if (result != null &&
+							(result.value != null && newBestResult.value != null && newBestResult.value < result.value) ||
 							(result.value != null && newBestResult.value == null)) {
 						//System.out.println("hhh");
 						newBestResult = result;
@@ -256,21 +257,29 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				} catch (IllegalArgumentException e) {
 					// some player doesn't have a legal move in differentFactor,
 					// so pull in some random move from across other factors
-					jointMove = new LinkedList<Move>();
+					System.out.println(role + ": for death-factor search, cannot find random, complete joint move in single factor");
+					jointMove = new ArrayList<Move>(stateMachine.getRoles().size());
+					Map<Role, Integer> roleIndices = stateMachine.getRoleIndices();
 					for (Role playerRole : stateMachine.getRoles()) {
+						boolean moveFound = false;
 						for (DumplingPropNetStateMachine otherFactor : factors) {
 							if (otherFactor != factor) {
-								Move move = otherFactor.getLegalMoves(state, playerRole).get(0);
-								if (move != null) {
-									jointMove.add(move);
+								List<Move> legalMoves = otherFactor.getLegalMoves(state, playerRole);
+								if (!legalMoves.isEmpty()) {
+									Move move = legalMoves.get(0);
+									jointMove.set(roleIndices.get(playerRole), move);
+									moveFound = true;
 									break;
 								}
 							}
 						}
+						if (!moveFound)
+							jointMove.clear();
 					}
 				}
 				if (jointMove != null && jointMove.size() == stateMachine.getRoles().size()) {
 					// all set -- go ahead and search for death
+					System.out.println(role + ": searching for death factor with random first move");
 					MachineState nextState = stateMachine.getNextState(state, jointMove);
 					
 					currentFactor = factor;
@@ -287,7 +296,8 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 					// we have to check all legal joint moves from this factor in
 					// order to properly determine its 'death' status
 					List<List<Move>> allJointMoves = factor.getLegalJointMoves(state);
-					if (allJointMoves.size() > 0) {
+					if (!allJointMoves.isEmpty()) {
+						System.out.println(role + ": searching through all of factor's joint moves for certain death");
 						for (List<Move> factorJointMove : allJointMoves) {
 							MachineState nextState = stateMachine.getNextState(state, factorJointMove);
 							
@@ -304,35 +314,44 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 						// can't even get legal joint moves in *this* factor! so
 						// search for legal joint moves across all factors that
 						// include a legal move for out player in this factor
+						System.out.println(role + ": searching for certain death through all of player's moves in factor combined w/ opponent moves from others");
+						Map<Role, Integer> roleIndices = stateMachine.getRoleIndices();
 						for (Move move : factor.getLegalMoves(state, role)) {
-							jointMove = new LinkedList<Move>();
-							jointMove.add(move);
+							jointMove = new ArrayList<Move>(stateMachine.getRoles().size());
+							jointMove.set(roleIndices.get(role), move);
 							for (Role playerRole : stateMachine.getRoles()) {
-								if (playerRole != role) {
+								if (!playerRole.equals(role)) {
+									boolean moveFound = false;
 									for (DumplingPropNetStateMachine otherFactor : factors) {
-										Move playerMove = otherFactor.getLegalMoves(state, playerRole).get(0);
-										if (move != null) {
-											jointMove.add(move);
+										List<Move> legalPlayerMoves = otherFactor.getLegalMoves(state, playerRole);
+										if (!legalPlayerMoves.isEmpty()) {
+											Move playerMove = legalPlayerMoves.get(0);
+											jointMove.set(roleIndices.get(playerRole), playerMove);
+											moveFound = true;
 											break;
 										}
+									}
+									if (!moveFound) {
+										jointMove = null;
+										break;
 									}
 								}
 							}
 							
-							if (jointMove.size() != stateMachine.getRoles().size()) {
+							if (jointMove == null || jointMove.size() != stateMachine.getRoles().size()) {
 								// ok...something is seriously wrong here
 								System.out.println(role + ": absolutely could not build a legal joint move for dead-factor search! whaaaa...?");
-							}
-							
-							MachineState nextState = stateMachine.getNextState(state, jointMove);
-							
-							currentFactor = factor;
-							Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
-							
-							if (testValue != null && testValue == 0) {
-								isDeathFound = true;
-								deathFactor = factor; 
-								break;
+							} else {
+								MachineState nextState = stateMachine.getNextState(state, jointMove);
+								
+								currentFactor = factor;
+								Integer testValue = maxScore(role, nextState, Integer.MIN_VALUE, Integer.MAX_VALUE, 2);	
+								
+								if (testValue != null && testValue == 0) {
+									isDeathFound = true;
+									deathFactor = factor; 
+									break;
+								}
 							}
 						}
 					}
@@ -371,7 +390,7 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			//	heuristic.setStateMachine(factor);
 			
 			Result result = new Result(null, Integer.MIN_VALUE);
-			List<Move> moves = factor.getLegalMoves(state, role);
+			List<Move> moves = currentFactor.getLegalMoves(state, role);
 			for (Move move : moves) {
 				if (stopExecution) {
 					isSearchComplete = false;
@@ -403,7 +422,6 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		}
 
 		private Integer minScore(Role role, Move move, MachineState state, int alpha, int beta, int depth) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-			
 			/* Check if we already have this state in cache */
 			Integer cacheValue;
 			String moveString = move.toString();
@@ -417,8 +435,57 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 
 			/* Compute minScore */
 			List<List<Move>> allJointMoves = currentFactor.getLegalJointMoves(state, role, move);
-			if (allJointMoves.isEmpty())
-				allJointMoves.add(Arrays.asList(new Move[]{ move }));
+			if (allJointMoves.isEmpty()) {
+				// build composite joint move with opponent moves from different factors
+				//System.out.println(role + ": no joint moves, so build composite with opponent moves from other factors");
+		        List<List<Move>> legals = new ArrayList<List<Move>>();
+		        List<Role> missingRolesInCurrent = new ArrayList<Role>();
+		        for (Role r : stateMachine.getRoles()) {
+		            if (r.equals(role)) {
+		                List<Move> m = new ArrayList<Move>();
+		                m.add(move);
+		                legals.add(m);
+		            } else {
+		            	List<Move> legalPlayerMoves = currentFactor.getLegalMoves(state, r);
+		            	if (legalPlayerMoves.isEmpty()) {
+		            		missingRolesInCurrent.add(r);
+		            		legalPlayerMoves = null;
+		            	}
+		                legals.add(legalPlayerMoves);
+		            }
+		        }
+		        allJointMoves = new ArrayList<List<Move>>();
+		        // get joint moves, where some entries might be null
+		        crossProductLegalMovesWithHoles(legals, allJointMoves, new LinkedList<Move>());
+		        
+		        // fill in empty joint move entries w/ moves from other factors (any moves)
+				Map<Role, Integer> roleIndices = stateMachine.getRoleIndices();
+		        for (Role playerRole : missingRolesInCurrent) {
+		        	if (!playerRole.equals(role)) {
+						Move legalMove = null;
+						for (DumplingPropNetStateMachine otherFactor : factors) {
+							if (otherFactor != currentFactor) {
+								List<Move> legalPlayerMoves = otherFactor.getLegalMoves(state, playerRole);
+								if (!legalPlayerMoves.isEmpty()) {
+									legalMove = legalPlayerMoves.get(0);
+									break;
+								}
+							}
+						}
+						if (legalMove == null) {
+							System.out.println("...what??? no move in any factor for '" + playerRole + "'? something's fishy!");
+							break;
+						}
+			        	for (List<Move> jointMove : allJointMoves) {
+							int roleIndex = roleIndices.get(playerRole);
+							if (jointMove.get(roleIndex) != null)
+								System.out.println("...wait, expected " + playerRole + "'s move at index " + roleIndex + " in " + jointMove + " to be null... something's fishy!");
+							else
+								jointMove.set(roleIndex, legalMove);
+			        	}
+		        	}
+		        }
+			}
 			
 			int worstScore = Integer.MAX_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
@@ -466,7 +533,6 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 		}
 
 		private Integer maxScore(Role role, MachineState state, int alpha, int beta, int depth) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-			
 			/* First check if this state is terminal */
 			if (stateMachine.isTerminal(state)) {				
 				numStatesExpanded++;
@@ -489,6 +555,17 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 			int bestValue = Integer.MIN_VALUE;
 			boolean heuristicUsed = false, nullValueReturned = false;
 			List<Move> moves = currentFactor.getLegalMoves(state, role);
+			if (moves.isEmpty()) {
+				// hmmm...no moves for us in this factor in this state --
+				// so play in another factor for now
+				for (DumplingPropNetStateMachine factor : factors) {
+					if (factor != currentFactor) {
+						moves = factor.getLegalMoves(state, role);
+						if (!moves.isEmpty())
+							break;
+					}
+				}
+			}
 			if (depth > maxDepth) {
 				// only apply heuristics when we've alpha-beta-ed as deep as we're going to go
 				// so heuristics don't slow us down as we're IDS-ing
@@ -550,7 +627,25 @@ public class IDSAlphaBetaFactor extends PlayerStrategy {
 				return heuristicUsed ? -bestValue : bestValue;
 			}
 		}
-
+		
+	    protected void crossProductLegalMovesWithHoles(List<List<Move>> legals, List<List<Move>> crossProduct, LinkedList<Move> partial)
+	    {
+	        if (partial.size() == legals.size()) {
+	            crossProduct.add(new ArrayList<Move>(partial));
+	        } else {
+	        	if (legals.get(partial.size()) == null) {
+	        		partial.add(null);
+	                crossProductLegalMovesWithHoles(legals, crossProduct, partial);
+	        	} else {
+		            for (Move move : legals.get(partial.size())) {
+		                partial.addLast(move);
+		                crossProductLegalMovesWithHoles(legals, crossProduct, partial);
+		                partial.removeLast();
+		            }
+	        	}
+	        }
+	    }
+	        
 
 		@Override
 		public void onTimeout() {
