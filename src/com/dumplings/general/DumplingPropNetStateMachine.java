@@ -339,6 +339,7 @@ public class DumplingPropNetStateMachine extends StateMachine {
 		terminalProposition = propNet.getTerminalProposition();
 
 		ordering = getOrdering();
+		System.out.println("Finished initializing propnet");
 	}
 
 	/**
