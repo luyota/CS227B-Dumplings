@@ -61,7 +61,7 @@ public class MonteCarloMiniMax extends PlayerStrategy {
 					System.out.println("Timed out!");
 					mcmmc.onTimeout(); // signal calculation thread to stop ASAP					
 				}		
-			}, Math.max((timeout - System.currentTimeMillis() - 50), 0));
+			}, Math.max((timeout - System.currentTimeMillis() - 500), 0));
 			mcmmc.join();
 			timer.cancel(); // stop timer in case it's still going
 		} catch (InterruptedException e) {}
