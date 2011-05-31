@@ -25,7 +25,8 @@ import com.dumplings.general.TimeoutHandler;
 public class MonteCarloMiniMax extends PlayerStrategy {
 	public Map<String, Integer> maxStateScores;
 	private Map<String, Map<String, Integer>> minStateScores;
-		
+	
+	
 	@Override
 	public void cleanup() {
 		if (maxStateScores != null)

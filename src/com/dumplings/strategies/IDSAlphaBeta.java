@@ -88,7 +88,7 @@ public class IDSAlphaBeta extends PlayerStrategy {
 			abc = new AlphaBetaComputer(state, role);
 			abc.start();			
 			try {				
-				abc.join(Math.max((timeout - System.currentTimeMillis() - 100), 0)); // wait until calculation thread finishes
+				abc.join(Math.max((timeout - System.currentTimeMillis() - 100), 1)); // wait until calculation thread finishes
 			} catch (InterruptedException e) {}
 
 			Integer newBestValue = abc.getBestValue();
@@ -301,7 +301,8 @@ public class IDSAlphaBeta extends PlayerStrategy {
 
 				// this is as far as we go, so calculate heuristic and be done w/ it
 				heuristicUsed = true;
-				if (heuristic != null && moves.size() > 1) {
+				// Even if we have only one move here, it's still important to drop the probe to see how it goes.
+				if (heuristic != null/* && moves.size() > 1*/) {
 					Integer value = heuristic.getScore(state, role);
 					if (value != null)
 						return -value; // return heuristic scores as negative to differentiate for caching purposes
