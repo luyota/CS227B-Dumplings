@@ -38,7 +38,7 @@ public final class MonteCarloPlayer extends StateMachineGamer
 		//strategy = new IDSAlphaBeta(getStateMachine());
 		//AbstractHeuristic heuristic = new MonteCarloDepthLimit(getStateMachine());
 		AbstractHeuristic heuristic = new MonteCarloDepthLimitMemory(getStateMachine());
-		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(10);
+		((MonteCarloDepthLimitMemory)heuristic).setSampleSize(2);
 		((MonteCarloDepthLimitMemory)heuristic).setMaxDepth(64);
 		strategy.setHeuristic(heuristic);
 	}
@@ -57,7 +57,11 @@ public final class MonteCarloPlayer extends StateMachineGamer
 		//System.out.println("Moves available: " + moves.size());
 		//for (Move m : moves)
 		//	System.out.println(m);
-		Move selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
+		Move selection;
+		if (moves.size() == 1)
+			selection = moves.get(0);
+		else
+			selection = strategy.getBestMove(getCurrentState(), getRole(), timeout);
 
 		long stop = System.currentTimeMillis();
 		
